@@ -2,6 +2,8 @@
 
 Global wiki at `~/wiki/`. Read `~/wiki/CLAUDE.md` for the full schema.
 
+**Precedence**: If `## Wiki` section exists in the active CLAUDE.md, that section takes precedence over this file for routing and auto-capture behavior. This file serves as the fallback for environments without a CLAUDE.md Wiki section.
+
 ## Auto-capture
 
 During any conversation, proactively identify knowledge worth persisting to the wiki:
