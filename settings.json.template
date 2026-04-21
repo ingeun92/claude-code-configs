@@ -3,7 +3,7 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "permissions": {
-    "defaultMode": "acceptEdits"
+    "defaultMode": "auto"
   },
   "hooks": {
     "PreToolUse": [
@@ -24,38 +24,9 @@
           }
         ]
       }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/ingeunkim/.local/bin/mempalace hook run --hook session-start --harness claude-code"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/ingeunkim/.local/bin/mempalace hook run --hook stop --harness claude-code"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/ingeunkim/.local/bin/mempalace hook run --hook precompact --harness claude-code"
-          }
-        ]
-      }
     ]
   },
   "language": "한국어",
-  "effortLevel": "medium"
+  "effortLevel": "high",
+  "skipAutoPermissionPrompt": true
 }
