@@ -28,5 +28,6 @@
   },
   "language": "한국어",
   "effortLevel": "high",
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "teammateMode": "auto"
 }
