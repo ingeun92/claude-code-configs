@@ -70,22 +70,4 @@ Say "setup omc" or run `/oh-my-claudecode:omc-setup`.
 
 <!-- OMC:END -->
 
-## Wiki
-
-2-tier: OMC wiki (`.omc/wiki/`, MCP tools) → global wiki (`~/wiki/`, schema: `~/wiki/CLAUDE.md`).
-
-**Routing**:
-- default / "add to wiki" → OMC wiki (`.omc/wiki/`, use MCP tools)
-- "global wiki" → `~/wiki/` (direct file I/O, follow `~/wiki/CLAUDE.md` schema)
-- "promote" / "distill" → distill from OMC wiki to global wiki
-- Exception: when cwd is `~/`, skip OMC wiki and write to `~/wiki/` directly (avoids `~/.omc/wiki/` ambiguity)
-
-**Auto-capture**: Save to OMC wiki without confirmation. Target: architecture decisions, reusable patterns, non-obvious findings. Skip: ephemeral notes, project-specific config, code-evident content.
-
-**Auto-distill** (on session end): If OMC wiki changed during session, promote to `~/wiki/`. Promote: category architecture/decision/pattern, or pages with 2+ cross-refs. Skip: session-log/debugging/environment. Read `~/wiki/CLAUDE.md` for target schema — classify into entity/concept/source/synthesis, add bidirectional `[[wikilinks]]`, update index.md + log.md.
-
-**Auto-reference**: Check `~/wiki/` before work when topic may have prior session context.
-
----
-
 @RTK.md
