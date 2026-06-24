@@ -28,6 +28,7 @@
   },
   "language": "한국어",
   "effortLevel": "high",
+  "tui": "fullscreen",
   "theme": "dark",
   "teammateMode": "auto",
   "skipAutoPermissionPrompt": true
