@@ -31,5 +31,6 @@
   "tui": "fullscreen",
   "theme": "dark",
   "teammateMode": "auto",
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "model": "sonnet"
 }
