@@ -5,6 +5,7 @@
   "permissions": {
     "defaultMode": "auto"
   },
+  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -28,9 +29,9 @@
   },
   "language": "한국어",
   "effortLevel": "high",
+  "advisorModel": "opus",
   "tui": "fullscreen",
   "theme": "dark",
   "teammateMode": "auto",
-  "skipAutoPermissionPrompt": true,
-  "model": "sonnet"
+  "skipAutoPermissionPrompt": true
 }
