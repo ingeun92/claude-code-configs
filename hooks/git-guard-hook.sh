@@ -14,9 +14,9 @@ if [ -z "$CMD" ]; then
   exit 0
 fi
 
-if echo "$CMD" | grep -qE '^\s*(git|rtk git)\s+push'; then
+if echo "$CMD" | grep -qE '(^|[;&|])\s*(git|rtk git)\s+push'; then
   cat ~/.claude/hooks/pre-push-checklist.md >&2
-elif echo "$CMD" | grep -qE '^\s*(git|rtk git)\s+commit'; then
+elif echo "$CMD" | grep -qE '(^|[;&|])\s*(git|rtk git)\s+commit'; then
   cat ~/.claude/hooks/pre-commit-checklist.md >&2
 fi
 

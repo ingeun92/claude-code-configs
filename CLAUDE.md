@@ -1,5 +1,5 @@
 <!-- OMC:START -->
-<!-- OMC:VERSION:4.15.4 -->
+<!-- OMC:VERSION:4.15.6 -->
 
 # oh-my-claudecode - Intelligent Multi-Agent Orchestration
 
@@ -69,5 +69,7 @@ State root: `.omc/` by default, or `$OMC_STATE_DIR/{project-id}/` when `OMC_STAT
 Say "setup omc" or run `/oh-my-claudecode:omc-setup`.
 
 <!-- OMC:END -->
+
+<!-- User customizations -->
 
 @RTK.md
