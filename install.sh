@@ -7,6 +7,26 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 
+PRUNE=false
+
+for arg in "$@"; do
+  case "$arg" in
+    --prune) PRUNE=true ;;
+    -h|--help)
+      echo "Usage: ./install.sh [--prune]"
+      echo ""
+      echo "  --prune  Also delete rules/hooks/skills that exist locally but not"
+      echo "           in this repo. Without it they are only reported."
+      echo "           Plugin-managed entries are never deleted."
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $arg (try --help)" >&2
+      exit 1
+      ;;
+  esac
+done
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -53,6 +73,39 @@ copy_file() {
 
   cp "$src" "$dest"
   info "  Copied: $(basename "$dest")"
+}
+
+# --- Orphan check ---
+
+# Unlike the repo, $CLAUDE_HOME is shared with plugins and Claude Code itself,
+# so entries missing from the repo are reported rather than deleted by default.
+# Anything a plugin owns is left alone even with --prune.
+is_plugin_owned() {
+  local kind="$1" name="$2"
+  [ -d "$CLAUDE_HOME/plugins" ] || return 1
+  find "$CLAUDE_HOME/plugins" -maxdepth 8 -path "*/$kind/$name" 2>/dev/null | grep -q .
+}
+
+report_orphans() {
+  local sub="$1" glob="$2"
+  local entry name
+  [ -d "$CLAUDE_HOME/$sub" ] || return 0
+  for entry in "$CLAUDE_HOME/$sub"/$glob; do
+    [ -e "$entry" ] || continue
+    name=$(basename "$entry")
+    [ -e "$REPO_DIR/$sub/$name" ] && continue
+    if is_plugin_owned "$sub" "$name"; then
+      info "  Left alone: $sub/$name (plugin-managed)"
+      continue
+    fi
+    if [ "$PRUNE" = true ]; then
+      backup_if_exists "$entry"
+      rm -rf "${entry:?}"
+      warn "  Removed: $sub/$name (not in repo)"
+    else
+      warn "  Not in repo: $sub/$name (run with --prune to delete)"
+    fi
+  done
 }
 
 copy_dir() {
@@ -102,6 +155,8 @@ for rule_file in "$REPO_DIR"/rules/*.md; do
   copy_file "$rule_file" "$CLAUDE_HOME/rules/$name"
 done
 
+report_orphans rules '*.md'
+
 # --- 4. Hooks ---
 
 info ""
@@ -114,6 +169,8 @@ for hook_file in "$REPO_DIR"/hooks/*; do
   name=$(basename "$hook_file")
   copy_file "$hook_file" "$CLAUDE_HOME/hooks/$name"
 done
+
+report_orphans hooks '*'
 
 # Ensure scripts are executable
 chmod +x "$CLAUDE_HOME"/hooks/*.sh 2>/dev/null || true
@@ -132,6 +189,8 @@ if [ -d "$REPO_DIR/skills" ]; then
     name=$(basename "$skill_dir")
     copy_dir "$skill_dir" "$CLAUDE_HOME/skills/$name"
   done
+
+  report_orphans skills '*'
 
   # Skill bundles may ship helper scripts
   chmod +x "$CLAUDE_HOME"/skills/*/scripts/* 2>/dev/null || true

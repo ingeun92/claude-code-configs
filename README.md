@@ -38,6 +38,14 @@ cd claude-code-configs
 2. **Copies** `RTK.md`, `rules/`, `hooks/`, `skills/` → `~/.claude`
 3. **Merges** `CLAUDE.md` → `~/.claude/CLAUDE.md` (preserving OMC-managed blocks)
 4. Renders `settings.json.template` with path substitution and **merges** into `~/.claude/settings.json` (preserving existing plugin settings)
+5. **Reports** rules, hooks, and skills that exist in `~/.claude` but not in the repo
+
+```bash
+./install.sh            # report-only (default)
+./install.sh --prune    # also delete the reported entries (backed up first)
+```
+
+The asymmetry with `sync.sh` is deliberate: the repo is owned entirely by this project, so `sync.sh` deletes freely, while `~/.claude` is shared with plugins and Claude Code itself, so `install.sh` never deletes unless asked. Entries owned by a plugin (a matching name under `~/.claude/plugins`) are left alone even with `--prune`.
 
 ## Dependencies (Optional)
 
