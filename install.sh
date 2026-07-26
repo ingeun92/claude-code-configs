@@ -55,6 +55,22 @@ copy_file() {
   info "  Copied: $(basename "$dest")"
 }
 
+copy_dir() {
+  local src="$1"
+  local dest="$2"
+
+  backup_if_exists "$dest"
+
+  if [ -L "$dest" ]; then
+    rm "$dest"
+  fi
+
+  # Replace wholesale so files removed upstream do not linger
+  rm -rf "$dest"
+  cp -R "$src" "$dest"
+  info "  Copied: $(basename "$dest")/"
+}
+
 # --- 1. CLAUDE.md ---
 
 info ""
@@ -102,7 +118,28 @@ done
 # Ensure scripts are executable
 chmod +x "$CLAUDE_HOME"/hooks/*.sh 2>/dev/null || true
 
-# --- 5. Merge settings.json ---
+# --- 5. Skills ---
+
+info ""
+info "=== Skills ==="
+
+if [ -d "$REPO_DIR/skills" ]; then
+  mkdir -p "$CLAUDE_HOME/skills"
+
+  for skill_dir in "$REPO_DIR"/skills/*/; do
+    [ -d "$skill_dir" ] || continue
+    skill_dir="${skill_dir%/}"
+    name=$(basename "$skill_dir")
+    copy_dir "$skill_dir" "$CLAUDE_HOME/skills/$name"
+  done
+
+  # Skill bundles may ship helper scripts
+  chmod +x "$CLAUDE_HOME"/skills/*/scripts/* 2>/dev/null || true
+else
+  warn "skills/ not found in repo. Skipping."
+fi
+
+# --- 6. Merge settings.json ---
 
 info ""
 info "=== Settings ==="

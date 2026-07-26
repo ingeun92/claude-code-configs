@@ -17,6 +17,8 @@ A repository for managing and sharing Claude Code global settings (`~/.claude`).
 │   ├── rtk-rewrite.sh         # RTK token-saving auto-rewrite
 │   ├── pre-commit-checklist.md
 │   └── pre-push-checklist.md
+├── skills/
+│   └── <name>/SKILL.md        # Personal skills (one directory per skill)
 ├── settings.json.template     # Settings template (with path placeholders)
 ├── install.sh                 # Install script
 └── sync.sh                    # Reverse sync script
@@ -33,7 +35,7 @@ cd claude-code-configs
 `install.sh` performs the following:
 
 1. Backs up existing settings to `~/.claude/backups/`
-2. **Copies** `RTK.md`, `rules/`, `hooks/` → `~/.claude`
+2. **Copies** `RTK.md`, `rules/`, `hooks/`, `skills/` → `~/.claude`
 3. **Merges** `CLAUDE.md` → `~/.claude/CLAUDE.md` (preserving OMC-managed blocks)
 4. Renders `settings.json.template` with path substitution and **merges** into `~/.claude/settings.json` (preserving existing plugin settings)
 
@@ -63,6 +65,10 @@ Edit/test settings locally in ~/.claude
 
 `sync.sh` copies modified files from `~/.claude` back to the repo. For `CLAUDE.md`, OMC-managed blocks are stripped. For `settings.json`, plugin-managed fields are stripped and absolute paths are replaced with `{{CLAUDE_HOME}}`. Only files already tracked in the repo are synced (plugin-installed hooks/rules are ignored).
 
+Deletions propagate: a rule, hook, or skill removed from `~/.claude` is removed from the repo as well, so the repo mirrors the local machine rather than accumulating leftovers. Each removal is printed as a `[WARN]` line — review `git status` before committing if you keep machine-specific files elsewhere. `CLAUDE.md` and `RTK.md` are never deleted this way.
+
+`skills/` is the exception: every skill directory under `~/.claude/skills` is mirrored, including ones the repo does not have yet, so newly written skills are picked up automatically. Each directory is replaced wholesale, so files deleted locally also disappear from the repo. Skills that are byte-identical to a copy under `~/.claude/plugins` (e.g. `omc-reference`) are detected as plugin-managed and skipped — install them via the plugin on each machine instead.
+
 ### Syncing to another machine
 
 ```bash
@@ -88,6 +94,10 @@ Fields you may want to customize:
 ### rules/
 
 Add `.md` files to the `rules/` directory and Claude Code will automatically pick them up. One file = one rule.
+
+### skills/
+
+One directory per skill, each containing a `SKILL.md` with `name`/`description` frontmatter. Create it in `~/.claude/skills/<name>/`, then run `./sync.sh` — new skills are added to the repo automatically. Helper scripts under `skills/<name>/scripts/` are made executable at install time.
 
 ### hooks/
 

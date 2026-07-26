@@ -1,10 +1,6 @@
 ---
-description: Checklist for building agent-friendly CLI tools
-globs:
-  - "**/cli/**"
-  - "**/bin/**"
-  - "**/commands/**"
-  - "**/cmd/**"
+name: cli-checklist
+description: Quality checklist for building CLI tools that AI agents or scripts will consume. Use whenever designing, implementing, or reviewing a command-line tool's interface — flags, output format, exit codes, error messages. Triggers on tasks like "build a CLI", "add a subcommand", "make this scriptable/agent-friendly", or reviewing CLI UX.
 ---
 
 # Quick Reference Checklist when building a CLI tool that agents will use

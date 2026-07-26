@@ -1,8 +1,6 @@
 ---
-description: Structure and quality checklist when writing or editing README files
-globs:
-  - "**/README.md"
-  - "**/README*.md"
+name: readme-guide
+description: Structure and quality guide for writing or revising README.md files. Use whenever creating a new README, restructuring an existing one, or reviewing project documentation for a repository. Triggers on tasks like "write a README", "improve the README", "add docs for this repo".
 ---
 
 # README.md Writing Guide

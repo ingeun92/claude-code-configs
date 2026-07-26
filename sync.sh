@@ -14,6 +14,20 @@ NC='\033[0m'
 info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 
+# Files deleted from ~/.claude are deleted from the repo too, so the repo stays
+# a faithful mirror instead of accumulating leftovers.
+prune() {
+  local repo_sub="$1" home_sub="$2" glob="$3"
+  local entry name
+  for entry in "$REPO_DIR/$repo_sub"/$glob; do
+    [ -e "$entry" ] || continue
+    name=$(basename "$entry")
+    [ -e "$CLAUDE_HOME/$home_sub/$name" ] && continue
+    rm -rf "${entry:?}"
+    warn "  $repo_sub/$name removed (gone from $CLAUDE_HOME/$home_sub)"
+  done
+}
+
 # --- 1. CLAUDE.md ---
 
 if [ -f "$CLAUDE_HOME/CLAUDE.md" ] && [ ! -L "$CLAUDE_HOME/CLAUDE.md" ]; then
@@ -42,6 +56,8 @@ for rule_file in "$CLAUDE_HOME"/rules/*.md; do
   fi
 done
 
+prune rules rules '*.md'
+
 # --- 4. Hooks ---
 
 info ""
@@ -56,10 +72,48 @@ for hook_file in "$CLAUDE_HOME"/hooks/*; do
   fi
 done
 
+prune hooks hooks '*'
+
 # Ensure scripts are executable
 chmod +x "$REPO_DIR"/hooks/*.sh 2>/dev/null || true
 
-# --- 5. settings.json -> settings.json.template ---
+# --- 5. Skills ---
+
+info ""
+info "=== Skills ==="
+
+# A skill in ~/.claude/skills may be a copy a plugin dropped there
+# (e.g. omc-reference). Those are managed by plugin installation, so they must
+# not be committed. Detect them by comparing against ~/.claude/plugins.
+is_plugin_skill() {
+  local name="$1" src="$2" candidate
+  [ -d "$CLAUDE_HOME/plugins" ] || return 1
+  while IFS= read -r candidate; do
+    diff -rq "$src" "$candidate" >/dev/null 2>&1 && return 0
+  done < <(find "$CLAUDE_HOME/plugins" -maxdepth 8 -type d -path "*/skills/$name" 2>/dev/null)
+  return 1
+}
+
+mkdir -p "$REPO_DIR/skills"
+
+for skill_dir in "$CLAUDE_HOME"/skills/*/; do
+  [ -d "$skill_dir" ] || continue
+  skill_dir="${skill_dir%/}"
+  name=$(basename "$skill_dir")
+  if [ -L "$skill_dir" ]; then continue; fi
+  if is_plugin_skill "$name" "$skill_dir"; then
+    warn "  skills/$name skipped (plugin-managed)"
+    continue
+  fi
+  # Mirror the whole directory so files deleted locally disappear from the repo
+  rm -rf "${REPO_DIR:?}/skills/$name"
+  cp -R "$skill_dir" "$REPO_DIR/skills/$name"
+  info "  skills/$name synced"
+done
+
+prune skills skills '*'
+
+# --- 6. settings.json -> settings.json.template ---
 
 info ""
 info "=== Settings ==="
