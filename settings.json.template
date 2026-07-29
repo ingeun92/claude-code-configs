@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{CLAUDE_HOME}}/hooks/rtk-rewrite.sh"
+            "command": "/opt/homebrew/bin/rtk hook claude"
           },
           {
             "type": "command",
