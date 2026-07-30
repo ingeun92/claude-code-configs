@@ -17,6 +17,10 @@ A repository for managing and sharing Claude Code global settings (`~/.claude`).
 │   ├── rtk-rewrite.sh         # RTK token-saving auto-rewrite
 │   ├── pre-commit-checklist.md
 │   └── pre-push-checklist.md
+├── scripts/
+│   └── generate-worklog.py    # Generates WORKLOG.md from claude-mem records
+├── templates/
+│   └── worklog-pointer.md     # WORKLOG.md pointer block injected into CLAUDE.md
 ├── skills/
 │   └── <name>/SKILL.md        # Personal skills (one directory per skill)
 ├── settings.json.template     # Settings template (with path placeholders)
@@ -35,10 +39,10 @@ cd claude-code-configs
 `install.sh` performs the following:
 
 1. Backs up existing settings to `~/.claude/backups/`
-2. **Copies** `RTK.md`, `rules/`, `hooks/`, `skills/` → `~/.claude`
+2. **Copies** `RTK.md`, `rules/`, `hooks/`, `scripts/`, `templates/`, `skills/` → `~/.claude`
 3. **Merges** `CLAUDE.md` → `~/.claude/CLAUDE.md` (preserving OMC-managed blocks)
 4. Renders `settings.json.template` with path substitution and **merges** into `~/.claude/settings.json` (preserving existing plugin settings)
-5. **Reports** rules, hooks, and skills that exist in `~/.claude` but not in the repo
+5. **Reports** rules, hooks, scripts, templates, and skills that exist in `~/.claude` but not in the repo
 
 ```bash
 ./install.sh            # report-only (default)
@@ -73,7 +77,7 @@ Edit/test settings locally in ~/.claude
 
 `sync.sh` copies modified files from `~/.claude` back to the repo. For `CLAUDE.md`, OMC-managed blocks are stripped. For `settings.json`, plugin-managed fields are stripped and absolute paths are replaced with `{{CLAUDE_HOME}}`. Only files already tracked in the repo are synced (plugin-installed hooks/rules are ignored).
 
-Deletions propagate: a rule, hook, or skill removed from `~/.claude` is removed from the repo as well, so the repo mirrors the local machine rather than accumulating leftovers. Each removal is printed as a `[WARN]` line — review `git status` before committing if you keep machine-specific files elsewhere. `CLAUDE.md` and `RTK.md` are never deleted this way.
+Deletions propagate: a rule, hook, script, template, or skill removed from `~/.claude` is removed from the repo as well, so the repo mirrors the local machine rather than accumulating leftovers. Each removal is printed as a `[WARN]` line — review `git status` before committing if you keep machine-specific files elsewhere. `CLAUDE.md` and `RTK.md` are never deleted this way.
 
 `skills/` is the exception: every skill directory under `~/.claude/skills` is mirrored, including ones the repo does not have yet, so newly written skills are picked up automatically. Each directory is replaced wholesale, so files deleted locally also disappear from the repo. Skills that are byte-identical to a copy under `~/.claude/plugins` (e.g. `omc-reference`) are detected as plugin-managed and skipped — install them via the plugin on each machine instead.
 
@@ -106,6 +110,20 @@ Add `.md` files to the `rules/` directory and Claude Code will automatically pic
 ### skills/
 
 One directory per skill, each containing a `SKILL.md` with `name`/`description` frontmatter. Create it in `~/.claude/skills/<name>/`, then run `./sync.sh` — new skills are added to the repo automatically. Helper scripts under `skills/<name>/scripts/` are made executable at install time.
+
+### scripts/
+
+Standalone helper scripts invoked by hand or from a skill, not registered in `settings.json`. Files are made executable at install time. `generate-worklog.py` builds a project's `WORKLOG.md` from claude-mem records:
+
+```bash
+~/.claude/scripts/generate-worklog.py --project <name> --out <path>/WORKLOG.md
+```
+
+To add another script, create it in `scripts/` here first, then run `./install.sh`. Like rules and hooks, `sync.sh` only syncs files that already exist in the repo — a brand-new file in `~/.claude/scripts/` is not picked up on its own.
+
+### templates/
+
+Reusable markdown fragments read by those scripts. `worklog-pointer.md` is the block `generate-worklog.py` writes into a project's `CLAUDE.md` so Claude knows the `WORKLOG.md` exists. Same seeding rule as `scripts/`: add the file to the repo first, then install.
 
 ### hooks/
 

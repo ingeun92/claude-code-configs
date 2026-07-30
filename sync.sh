@@ -77,7 +77,43 @@ prune hooks hooks '*'
 # Ensure scripts are executable
 chmod +x "$REPO_DIR"/hooks/*.sh 2>/dev/null || true
 
-# --- 5. Skills ---
+# --- 5. Scripts ---
+
+info ""
+info "=== Scripts ==="
+mkdir -p "$REPO_DIR/scripts"
+for script_file in "$CLAUDE_HOME"/scripts/*; do
+  [ -f "$script_file" ] || continue
+  name=$(basename "$script_file")
+  if [ -L "$script_file" ]; then continue; fi
+  if [ -f "$REPO_DIR/scripts/$name" ]; then
+    cp "$script_file" "$REPO_DIR/scripts/$name"
+    info "  scripts/$name synced"
+  fi
+done
+
+prune scripts scripts '*'
+
+chmod +x "$REPO_DIR"/scripts/* 2>/dev/null || true
+
+# --- 6. Templates ---
+
+info ""
+info "=== Templates ==="
+mkdir -p "$REPO_DIR/templates"
+for template_file in "$CLAUDE_HOME"/templates/*; do
+  [ -f "$template_file" ] || continue
+  name=$(basename "$template_file")
+  if [ -L "$template_file" ]; then continue; fi
+  if [ -f "$REPO_DIR/templates/$name" ]; then
+    cp "$template_file" "$REPO_DIR/templates/$name"
+    info "  templates/$name synced"
+  fi
+done
+
+prune templates templates '*'
+
+# --- 7. Skills ---
 
 info ""
 info "=== Skills ==="
@@ -113,7 +149,7 @@ done
 
 prune skills skills '*'
 
-# --- 6. settings.json -> settings.json.template ---
+# --- 8. settings.json -> settings.json.template ---
 
 info ""
 info "=== Settings ==="

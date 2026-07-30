@@ -15,9 +15,9 @@ for arg in "$@"; do
     -h|--help)
       echo "Usage: ./install.sh [--prune]"
       echo ""
-      echo "  --prune  Also delete rules/hooks/skills that exist locally but not"
-      echo "           in this repo. Without it they are only reported."
-      echo "           Plugin-managed entries are never deleted."
+      echo "  --prune  Also delete rules/hooks/scripts/templates/skills that exist"
+      echo "           locally but not in this repo. Without it they are only"
+      echo "           reported. Plugin-managed entries are never deleted."
       exit 0
       ;;
     *)
@@ -175,7 +175,47 @@ report_orphans hooks '*'
 # Ensure scripts are executable
 chmod +x "$CLAUDE_HOME"/hooks/*.sh 2>/dev/null || true
 
-# --- 5. Skills ---
+# --- 5. Scripts ---
+
+info ""
+info "=== Scripts ==="
+
+if [ -d "$REPO_DIR/scripts" ]; then
+  mkdir -p "$CLAUDE_HOME/scripts"
+
+  for script_file in "$REPO_DIR"/scripts/*; do
+    [ -f "$script_file" ] || continue
+    name=$(basename "$script_file")
+    copy_file "$script_file" "$CLAUDE_HOME/scripts/$name"
+  done
+
+  report_orphans scripts '*'
+
+  chmod +x "$CLAUDE_HOME"/scripts/* 2>/dev/null || true
+else
+  warn "scripts/ not found in repo. Skipping."
+fi
+
+# --- 6. Templates ---
+
+info ""
+info "=== Templates ==="
+
+if [ -d "$REPO_DIR/templates" ]; then
+  mkdir -p "$CLAUDE_HOME/templates"
+
+  for template_file in "$REPO_DIR"/templates/*; do
+    [ -f "$template_file" ] || continue
+    name=$(basename "$template_file")
+    copy_file "$template_file" "$CLAUDE_HOME/templates/$name"
+  done
+
+  report_orphans templates '*'
+else
+  warn "templates/ not found in repo. Skipping."
+fi
+
+# --- 7. Skills ---
 
 info ""
 info "=== Skills ==="
@@ -198,7 +238,7 @@ else
   warn "skills/ not found in repo. Skipping."
 fi
 
-# --- 6. Merge settings.json ---
+# --- 8. Merge settings.json ---
 
 info ""
 info "=== Settings ==="
