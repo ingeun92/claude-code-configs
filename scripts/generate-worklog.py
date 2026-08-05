@@ -25,6 +25,7 @@ import os
 import re
 import sqlite3
 import sys
+import tempfile
 from collections import OrderedDict, defaultdict
 from datetime import datetime, timezone
 
@@ -103,12 +104,15 @@ TYPE_LABELS = OrderedDict([
     ("verification", "Verification"),
     ("security_alert", "Security alert"),
     ("security_note", "Security note"),
+    ("sensitive", "Sensitive"),
     ("discovery", "Discovery"),
 ])
 UNKNOWN_LABEL = "Other"
 
-# High-signal, low-volume types that make up the default index
-DECISION_TYPES = {"decision", "security_alert", "security_note"}
+# High-signal, low-volume types that make up the default index.
+# `sensitive` belongs here: claude-mem writes it for secret-adjacent findings, and it
+# is what this DB actually stores — the `security_*` names alone silently dropped them.
+DECISION_TYPES = {"decision", "security_alert", "security_note", "sensitive"}
 
 # High-volume, low-signal types worth folding away
 COLLAPSED = {"discovery", "change"}
@@ -153,6 +157,8 @@ def _range_clause(sql, args, since, until):
 def fetch_summaries(conn, project, since, until):
     sql = """SELECT date(created_at) d, created_at, memory_session_id sid,
                     COALESCE(request,'') request,
+                    COALESCE(investigated,'') investigated,
+                    COALESCE(learned,'') learned,
                     COALESCE(completed,'') completed,
                     COALESCE(next_steps,'') next_steps
              FROM session_summaries WHERE project = ?"""
@@ -274,6 +280,13 @@ def render_narrative(summaries, next_from):
             L.append(f"#### {title}")
             body = indent_block(r["completed"])
             L += body if body else ["  - (nothing recorded as completed)"]
+            # `learned` carries the technical findings and `investigated` the search
+            # trail — the two thickest fields in a summary. Omitting them made entries
+            # read as "nothing much happened" even when the session recorded plenty.
+            for label, field in (("Learned", "learned"), ("Investigated", "investigated")):
+                blk = indent_block(r[field])
+                if blk:
+                    L += ["", f"  **{label}**"] + blk
             if next_from and r["d"] >= next_from and r["next_steps"].strip():
                 nb = indent_block(r["next_steps"])
                 if nb:
@@ -327,6 +340,39 @@ def splice(existing, body, project):
     return f"# {project} work history\n\n{block}"
 
 
+def atomic_write(path, text):
+    """Write via a temp file in the same directory, then rename over the target.
+
+    A plain open(path, "w") truncates immediately, so a crash mid-write leaves a
+    partial file. The generated body is recoverable from the DB, but hand-written
+    text outside the marker block is not. os.replace() is atomic on the same
+    filesystem, so readers see either the old file or the new one, never a stump.
+    """
+    directory = os.path.dirname(os.path.abspath(path))
+    # mkstemp creates 0600 and os.replace carries the temp file's mode over, so the
+    # target's permissions must be restored explicitly or every run tightens them.
+    try:
+        mode = os.stat(path).st_mode & 0o777
+    except OSError:
+        umask = os.umask(0)
+        os.umask(umask)
+        mode = 0o666 & ~umask
+    fd, tmp = tempfile.mkstemp(dir=directory, prefix=".worklog-", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.chmod(tmp, mode)
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
 def load_template(path):
     """Read the global template, falling back to the embedded copy."""
     try:
@@ -377,8 +423,7 @@ def write_pointer(path, section, project):
     else:
         doc, action = f"{existing.rstrip()}\n\n{section}", "appended"
 
-    with open(path, "w", encoding="utf-8") as fh:
-        fh.write(doc)
+    atomic_write(path, doc)
     return action
 
 
@@ -447,8 +492,7 @@ def main():
         with open(path, encoding="utf-8") as fh:
             existing = fh.read()
     doc = splice(existing, body, a.project)
-    with open(path, "w", encoding="utf-8") as fh:
-        fh.write(doc)
+    atomic_write(path, doc)
     state = "" if BEGIN in existing else " (new)"
     print(
         f"{path} — {len(doc):,} chars / {len(summaries)} summaries · {len(obs)} observations{state}",
