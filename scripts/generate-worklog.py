@@ -26,7 +26,7 @@ import re
 import sqlite3
 import sys
 import tempfile
-from collections import OrderedDict, defaultdict
+from collections import Counter, OrderedDict, defaultdict
 from datetime import datetime, timezone
 
 DEFAULT_DB = os.path.expanduser("~/.claude-mem/claude-mem.db")
@@ -154,26 +154,79 @@ def _range_clause(sql, args, since, until):
     return sql
 
 
-def fetch_summaries(conn, project, since, until):
-    sql = """SELECT date(created_at) d, created_at, memory_session_id sid,
+def _in_clause(projects):
+    """`project IN (?,?,…)` — a single key still goes through here so both paths
+    share one query shape."""
+    return " AND project IN (%s)" % ",".join("?" * len(projects))
+
+
+def fetch_summaries(conn, projects, since, until):
+    sql = """SELECT date(created_at) d, created_at, memory_session_id sid, project,
                     COALESCE(request,'') request,
                     COALESCE(investigated,'') investigated,
                     COALESCE(learned,'') learned,
                     COALESCE(completed,'') completed,
                     COALESCE(next_steps,'') next_steps
-             FROM session_summaries WHERE project = ?"""
-    args = [project]
+             FROM session_summaries WHERE 1=1"""
+    args = list(projects)
+    sql += _in_clause(projects)
     sql = _range_clause(sql, args, since, until)
     return conn.execute(sql + " ORDER BY created_at_epoch ASC, id ASC", args).fetchall()
 
 
-def fetch_observations(conn, project, since, until):
-    sql = """SELECT date(created_at) d, type, COALESCE(title,'') title,
+def fetch_observations(conn, projects, since, until):
+    sql = """SELECT date(created_at) d, type, project, COALESCE(title,'') title,
                     COALESCE(subtitle,'') subtitle
-             FROM observations WHERE project = ?"""
-    args = [project]
+             FROM observations WHERE 1=1"""
+    args = list(projects)
+    sql += _in_clause(projects)
     sql = _range_clause(sql, args, since, until)
     return conn.execute(sql + " ORDER BY created_at_epoch ASC, id ASC", args).fetchall()
+
+
+# Directory names that never hold a sibling project and would blow up the scan.
+SCAN_SKIP = {
+    "node_modules", "dist", "build", "out", "target", "vendor", "Pods",
+    "ios", "android", "coverage", "__pycache__", ".venv", "venv",
+}
+SCAN_DEPTH = 2
+
+
+def discover_projects(root, known, depth=SCAN_DEPTH):
+    """claude-mem keys whose name matches a directory under `root`.
+
+    claude-mem stores only the basename as the project key — no path — so a
+    same-named directory elsewhere on disk is indistinguishable from this one.
+    That is why the caller prints the adopted keys: the operator, not the
+    script, is the one who can spot a wrong match.
+
+    Depth 2 costs ~1ms on a 26-directory workspace, so it is not worth making
+    configurable; the skip list keeps `node_modules` from dominating the walk.
+    """
+    found = set()
+
+    def walk(path, level):
+        if level > depth:
+            return
+        try:
+            entries = list(os.scandir(path))
+        except OSError:  # unreadable dir is not fatal — just unscannable
+            return
+        for e in entries:
+            if not e.is_dir(follow_symlinks=False):
+                continue
+            if e.name.startswith(".") or e.name in SCAN_SKIP:
+                continue
+            if e.name in known:
+                found.add(e.name)
+            walk(e.path, level + 1)
+
+    walk(root, 1)
+    return found
+
+
+def all_project_keys(conn):
+    return {r["project"] for r in conn.execute("SELECT DISTINCT project FROM observations")}
 
 
 def indent_block(text):
@@ -207,7 +260,7 @@ def label_of(typ):
     return TYPE_LABELS.get(typ, UNKNOWN_LABEL)
 
 
-def render_index(obs, mode):
+def render_index(obs, mode, tag_project=False):
     """Index of observations grouped day -> type. mode: decisions | all"""
     if mode == "none" or not obs:
         return []
@@ -247,6 +300,8 @@ def render_index(obs, mode):
                 title = " ".join(it["title"].split())
                 sub = " ".join(it["subtitle"].split())
                 line = f"- {title}" if title else "- (untitled)"
+                if tag_project:
+                    line = f"- `{it['project']}` {line[2:]}"
                 if sub and sub.lower() != title.lower():
                     line += f" — {sub}"
                 L.append(line)
@@ -256,7 +311,7 @@ def render_index(obs, mode):
     return L
 
 
-def render_narrative(summaries, next_from):
+def render_narrative(summaries, next_from, tag_project=False):
     by_date = OrderedDict()
     seen = set()
     for r in summaries:
@@ -277,6 +332,10 @@ def render_narrative(summaries, next_from):
             title = " ".join(r["request"].split()) or "(no request recorded)"
             if len(title) > 160:
                 title = title[:157] + "..."
+            # Without the origin, entries from three repos read as one undifferentiated
+            # stream and "which codebase was this?" becomes unanswerable.
+            if tag_project:
+                title = f"`{r['project']}` · {title}"
             L.append(f"#### {title}")
             body = indent_block(r["completed"])
             L += body if body else ["  - (nothing recorded as completed)"]
@@ -295,16 +354,19 @@ def render_narrative(summaries, next_from):
     return L, by_date
 
 
-def build(project, summaries, obs, next_from, index_mode, since, until):
+def build(projects, summaries, obs, next_from, index_mode, since, until, command):
     stamp = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M %Z")
-    narrative, by_date = render_narrative(summaries, next_from) if summaries else ([], {})
+    multi = len(projects) > 1
+    narrative, by_date = (
+        render_narrative(summaries, next_from, multi) if summaries else ([], {})
+    )
     dates = sorted({*(by_date.keys()), *(o["d"] for o in obs)})
     sessions = len({r["sid"] for r in summaries})
 
     L = [
         "> Generated from claude-mem records. **Text outside the marker block is preserved**",
         "> across regeneration.",
-        f"> Update: `~/.claude/scripts/generate-worklog.py --project {project} --out <this file>`",
+        f"> Update: `{command}`",
         ">",
         "> **Each entry is a point-in-time record, not settled fact.** claude-mem stores",
         "> conclusions without verifying them, so a claim that a later session reversed may",
@@ -317,18 +379,24 @@ def build(project, summaries, obs, next_from, index_mode, since, until):
         f"- {sessions} sessions / {len(summaries)} summaries / {len(obs)} observations",
         f"- Generated: {stamp}",
     ]
+    if multi:
+        # Per-key counts make a missing repo obvious — a key that scanned but holds
+        # nothing in range shows up as 0 rather than silently vanishing.
+        per = Counter(o["project"] for o in obs)
+        parts = ", ".join(f"{p} ({per.get(p, 0)})" for p in projects)
+        L.append(f"- Projects: {parts}")
     if since or until:
         L.append(f"- Filter: {since or 'start'} ~ {until or 'end'}")
     L += ["", "---", ""]
 
-    idx = render_index(obs, index_mode)
+    idx = render_index(obs, index_mode, multi)
     if idx:
         L += idx + ["---", ""]
     L += narrative
     return "\n".join(L).rstrip() + "\n"
 
 
-def splice(existing, body, project):
+def splice(existing, body, title):
     """Replace only the marker block, preserving everything outside it."""
     block = f"{BEGIN}\n{body}{END}\n"
     if existing and BEGIN in existing and END in existing:
@@ -337,7 +405,7 @@ def splice(existing, body, project):
         return f"{head}{block}{tail.lstrip(chr(10))}"
     if existing:  # existing file without markers — append instead of destroying it
         return f"{existing.rstrip()}\n\n{block}"
-    return f"# {project} work history\n\n{block}"
+    return f"# {title} work history\n\n{block}"
 
 
 def atomic_write(path, text):
@@ -459,6 +527,12 @@ def main():
     )
     ap.add_argument("--db", default=DEFAULT_DB, help=f"claude-mem DB path (default {DEFAULT_DB})")
     ap.add_argument("--list-projects", action="store_true", help="list available project keys")
+    ap.add_argument(
+        "--include-subprojects",
+        action="store_true",
+        help=f"also pull keys matching directories under the output dir "
+             f"(depth {SCAN_DEPTH}) — for a workspace holding several repos",
+    )
     a = ap.parse_args()
 
     conn = connect_ro(a.db)
@@ -469,13 +543,39 @@ def main():
         if not a.project:
             ap.error("--project is required (use --list-projects to see the keys)")
 
-        summaries = fetch_summaries(conn, a.project, a.since, a.until)
-        obs = fetch_observations(conn, a.project, a.since, a.until)
+        projects = [a.project]
+        if a.include_subprojects:
+            if not a.out or a.out == "-":
+                ap.error("--include-subprojects needs --out (the scan root is its directory)")
+            root = os.path.dirname(os.path.abspath(os.path.expanduser(a.out))) or "."
+            extra = discover_projects(root, all_project_keys(conn)) - {a.project}
+            projects += sorted(extra)
+            # claude-mem keys carry no path, so a same-named directory elsewhere is
+            # indistinguishable. Print what was adopted — the operator is the only
+            # one who can catch a wrong match.
+            print(f"projects: {', '.join(projects)}  (scan root: {root})", file=sys.stderr)
+
+        summaries = fetch_summaries(conn, projects, a.since, a.until)
+        obs = fetch_observations(conn, projects, a.since, a.until)
         if not summaries and not obs:
-            sys.exit(f"no records for project '{a.project}' under these filters.")
+            sys.exit(f"no records for {', '.join(projects)} under these filters.")
 
         next_from = a.next_steps_from or (max(r["d"] for r in summaries) if summaries else None)
-        body = build(a.project, summaries, obs, next_from, a.index, a.since, a.until)
+
+        # Collapse paths under $HOME back to ~ — a shell-expanded absolute path baked
+        # into the command would not port to another machine.
+        home = os.path.expanduser("~")
+        shown = None
+        if a.out and a.out != "-":
+            abs_out = os.path.abspath(os.path.expanduser(a.out))
+            shown = f"~{abs_out[len(home):]}" if abs_out.startswith(home + os.sep) else a.out
+        cmd = (
+            f"~/.claude/scripts/generate-worklog.py --project {a.project}"
+            + (f" --out {shown}" if shown else "")
+            + (f" --index {a.index}" if a.index != "decisions" else "")
+            + (" --include-subprojects" if a.include_subprojects else "")
+        )
+        body = build(projects, summaries, obs, next_from, a.index, a.since, a.until, cmd)
     finally:
         conn.close()
 
@@ -501,21 +601,11 @@ def main():
 
     if a.no_claude_md:
         return
-    # Collapse paths under $HOME back to ~ — a shell-expanded absolute path baked
-    # into the command would not port to another machine.
-    home = os.path.expanduser("~")
-    abs_path = os.path.abspath(path)
-    shown = f"~{abs_path[len(home):]}" if abs_path.startswith(home + os.sep) else path
-    cmd = (
-        f"~/.claude/scripts/generate-worklog.py --project {a.project} "
-        f"--out {shown}"
-        + (f" --index {a.index}" if a.index != "decisions" else "")
-    )
     section = render_pointer(
         load_template(a.template), os.path.basename(path), cmd, a.index
     )
     md_path = os.path.expanduser(a.claude_md) if a.claude_md else os.path.join(
-        os.path.dirname(abs_path), "CLAUDE.md"
+        os.path.dirname(os.path.abspath(path)), "CLAUDE.md"
     )
     action = write_pointer(md_path, section, a.project)
     print(f"{md_path} — pointer {action}", file=sys.stderr)

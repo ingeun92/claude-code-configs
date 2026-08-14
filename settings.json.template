@@ -25,6 +25,7 @@
   "awaySummaryEnabled": false,
   "tui": "fullscreen",
   "theme": "dark",
+  "autoCompactEnabled": true,
   "teammateMode": "auto",
   "skipAutoPermissionPrompt": true
 }
