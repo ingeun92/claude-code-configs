@@ -10,10 +10,6 @@
           {
             "type": "command",
             "command": "/opt/homebrew/bin/rtk hook claude"
-          },
-          {
-            "type": "command",
-            "command": "{{CLAUDE_HOME}}/hooks/git-guard-hook.sh"
           }
         ]
       }
