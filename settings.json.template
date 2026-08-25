@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/opt/homebrew/bin/rtk hook claude"
+            "command": "rtk hook claude"
           }
         ]
       }
@@ -23,5 +23,24 @@
   "theme": "dark",
   "autoCompactEnabled": true,
   "teammateMode": "auto",
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "omcHud": {
+    "preset": "focused",
+    "elements": {
+      "omcLabel": false,
+      "model": false,
+      "showCallCounts": false,
+      "ralph": false,
+      "autopilot": false,
+      "prdStory": false,
+      "cwd": true,
+      "cwdFormat": "relative",
+      "gitBranch": true,
+      "gitStatus": true
+    },
+    "elementOrder": [
+      "rateLimits",
+      "contextBar"
+    ]
+  }
 }
