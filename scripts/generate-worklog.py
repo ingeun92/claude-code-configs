@@ -574,6 +574,12 @@ def main():
             + (f" --out {shown}" if shown else "")
             + (f" --index {a.index}" if a.index != "decisions" else "")
             + (" --include-subprojects" if a.include_subprojects else "")
+            # 문서를 재현하는 플래그는 전부 실어야 한다. 빠지면 이 명령을 그대로 돌린
+            # 사람이 다른 문서를 얻는데, 차이가 조용하다 — next-steps-from 이 빠지면
+            # 이전 날짜의 미해결 블로커가 소리 없이 사라진다.
+            + (f" --next-steps-from {a.next_steps_from}" if a.next_steps_from else "")
+            + (f" --since {a.since}" if a.since else "")
+            + (f" --until {a.until}" if a.until else "")
         )
         body = build(projects, summaries, obs, next_from, a.index, a.since, a.until, cmd)
     finally:
