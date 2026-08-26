@@ -17,7 +17,7 @@
   },
   "language": "한국어",
   "effortLevel": "high",
-  "advisorModel": "opus",
+  "advisorModel": "fable",
   "awaySummaryEnabled": false,
   "tui": "fullscreen",
   "theme": "dark",
@@ -28,7 +28,7 @@
     "preset": "focused",
     "elements": {
       "omcLabel": false,
-      "model": false,
+      "model": true,
       "showCallCounts": false,
       "ralph": false,
       "autopilot": false,
@@ -39,6 +39,7 @@
       "gitStatus": true
     },
     "elementOrder": [
+      "model",
       "rateLimits",
       "contextBar"
     ]
