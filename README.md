@@ -5,7 +5,7 @@ A repository for managing and sharing Claude Code global settings (`~/.claude`).
 ## Structure
 
 ```
-├── CLAUDE.md                  # Global instructions (includes OMC orchestration)
+├── CLAUDE.md                  # Global instructions
 ├── RTK.md                     # RTK token-saving CLI guide
 ├── rules/
 │   ├── cli-checklist.md       # CLI tool building checklist
@@ -31,7 +31,7 @@ A repository for managing and sharing Claude Code global settings (`~/.claude`).
 ## Quick Start
 
 ```bash
-git clone https://github.com/xd-protocol/claude-code-configs.git
+git clone https://github.com/ingeun92/claude-code-configs.git
 cd claude-code-configs
 ./install.sh
 ```
@@ -40,7 +40,7 @@ cd claude-code-configs
 
 1. Backs up existing settings to `~/.claude/backups/`
 2. **Copies** `RTK.md`, `rules/`, `hooks/`, `scripts/`, `templates/`, `skills/` → `~/.claude`
-3. **Merges** `CLAUDE.md` → `~/.claude/CLAUDE.md` (preserving OMC-managed blocks)
+3. **Copies** `CLAUDE.md` → `~/.claude/CLAUDE.md`
 4. Renders `settings.json.template` with path substitution and **merges** into `~/.claude/settings.json` (preserving existing plugin settings)
 5. **Reports** rules, hooks, scripts, templates, and skills that exist in `~/.claude` but not in the repo
 
@@ -58,7 +58,6 @@ These settings work fully when combined with the tools below.
 
 | Tool | Purpose | Install |
 |------|---------|---------|
-| [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | Multi-agent orchestration | `claude plugin install oh-my-claudecode@omc` |
 | [RTK](https://github.com/rtk-ai/rtk) | Token-saving CLI proxy | `brew install rtk` |
 | [claude-mem](https://github.com/thedotmack/claude-mem) | Cross-session memory | `claude plugin install claude-mem@thedotmack` |
 | [jq](https://jqlang.github.io/jq/) | Hook script dependency | `brew install jq` |
@@ -75,11 +74,11 @@ Edit/test settings locally in ~/.claude
     └→ ./sync.sh && git add && git commit
 ```
 
-`sync.sh` copies modified files from `~/.claude` back to the repo. For `CLAUDE.md`, OMC-managed blocks are stripped. For `settings.json`, plugin-managed fields are stripped and absolute paths are replaced with `{{CLAUDE_HOME}}`. Only files already tracked in the repo are synced (plugin-installed hooks/rules are ignored).
+`sync.sh` copies modified files from `~/.claude` back to the repo. `CLAUDE.md` and `RTK.md` are copied as-is. For `settings.json`, plugin-managed fields are stripped and absolute paths are replaced with `{{CLAUDE_HOME}}`. Only files already tracked in the repo are synced (plugin-installed hooks/rules are ignored).
 
 Deletions propagate: a rule, hook, script, template, or skill removed from `~/.claude` is removed from the repo as well, so the repo mirrors the local machine rather than accumulating leftovers. Each removal is printed as a `[WARN]` line — review `git status` before committing if you keep machine-specific files elsewhere. `CLAUDE.md` and `RTK.md` are never deleted this way.
 
-`skills/` is the exception: every skill directory under `~/.claude/skills` is mirrored, including ones the repo does not have yet, so newly written skills are picked up automatically. Each directory is replaced wholesale, so files deleted locally also disappear from the repo. Skills that are byte-identical to a copy under `~/.claude/plugins` (e.g. `omc-reference`) are detected as plugin-managed and skipped — install them via the plugin on each machine instead.
+`skills/` is the exception: every skill directory under `~/.claude/skills` is mirrored, including ones the repo does not have yet, so newly written skills are picked up automatically. Each directory is replaced wholesale, so files deleted locally also disappear from the repo. Skills that are byte-identical to a copy under `~/.claude/plugins` are detected as plugin-managed and skipped — install them via the plugin on each machine instead.
 
 ### Syncing to another machine
 

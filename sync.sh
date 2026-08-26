@@ -118,9 +118,9 @@ prune templates templates '*'
 info ""
 info "=== Skills ==="
 
-# A skill in ~/.claude/skills may be a copy a plugin dropped there
-# (e.g. omc-reference). Those are managed by plugin installation, so they must
-# not be committed. Detect them by comparing against ~/.claude/plugins.
+# A skill in ~/.claude/skills may be a copy a plugin dropped there. Those are
+# managed by plugin installation, so they must not be committed. Detect them by
+# comparing against ~/.claude/plugins.
 is_plugin_skill() {
   local name="$1" src="$2" candidate
   [ -d "$CLAUDE_HOME/plugins" ] || return 1
