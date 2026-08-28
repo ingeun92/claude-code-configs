@@ -41,6 +41,14 @@ POINTER_END = "<!-- worklog-pointer:end -->"
 # Global template. Falls back to EMBEDDED_TEMPLATE below, so the script works standalone.
 TEMPLATE_PATH = os.path.expanduser("~/.claude/templates/worklog-pointer.md")
 
+# Heading of the hand-maintained reconciliation ledger. It lives OUTSIDE the marker
+# block (splice() preserves everything before BEGIN), so it survives regeneration.
+# Cross-session reversals cannot be detected mechanically — observation `concepts` are
+# generic taxonomy tags, not topics — so this ledger is the only place they get
+# reconciled. The /worklog skill refreshes it; the script only points at it.
+LEDGER_HEADING = "## 현재 유효한 결론 (Current conclusions)"
+LEDGER_HEADING_INLINE = "the `현재 유효한 결론 (Current conclusions)` ledger above"
+
 EMBEDDED_TEMPLATE = """## Work history
 
 `{{worklog}}` holds this project's dated work history, generated from claude-mem
@@ -68,26 +76,42 @@ regeneration.
 conclusions without verifying them, so a claim that a later session reversed may
 still sit here uncorrected. Before relying on any single entry, check whether a
 later date revisits it.
+
+**Two layers, different reliability.** The index is written mid-session and keeps
+conclusions the same session later reversed; the session log is written at session
+end and holds that session's settled outcome — prefer the session log when the two
+disagree.
+
+**A `## 현재 유효한 결론 (Current conclusions)` section at the top of `{{worklog}}`,
+if present, outranks both.** It is the hand-maintained ledger reconciling reversals
+across sessions, refreshed by `/worklog`, and each line carries the dates and
+observation IDs it rests on. It goes stale between regenerations — check its "as of"
+date, and verify against the log below before treating a line as current.
 """
 
 # Per --index blurb describing the document layout (fills {{sections}} in the template)
 SECTION_BLURBS = {
     "decisions": (
-        "- **Decision index** — observations typed `decision` / `security_*`. "
-        "Use it to answer \"when and why was X decided\".\n"
+        "- **Decision index** — observations typed `decision` / `security_*`, recorded "
+        "*while* a session ran. Use it to answer \"when and why was X decided\", but read "
+        "it as in-flight: a conclusion the same session later reversed is still listed.\n"
         "- **Session log** — what was requested and what was completed, "
-        "including commit hashes, PR numbers, and verification results."
+        "including commit hashes, PR numbers, and verification results. "
+        "Written at session end, so it carries that session's **settled** outcome."
     ),
     "all": (
         "- **Observation index** — every observation grouped by day and type "
-        "(decision, feature, bugfix, refactor, change, discovery …). "
+        "(decision, feature, bugfix, refactor, change, discovery …), recorded *while* a "
+        "session ran, so reversed conclusions are still listed. "
         "High-volume types are folded into `<details>` blocks.\n"
         "- **Session log** — what was requested and what was completed, "
-        "including commit hashes, PR numbers, and verification results."
+        "including commit hashes, PR numbers, and verification results. "
+        "Written at session end, so it carries that session's **settled** outcome."
     ),
     "none": (
         "- **Session log** — what was requested and what was completed, "
-        "including commit hashes, PR numbers, and verification results."
+        "including commit hashes, PR numbers, and verification results. "
+        "Written at session end, so it carries that session's **settled** outcome."
     ),
 }
 
@@ -175,7 +199,7 @@ def fetch_summaries(conn, projects, since, until):
 
 
 def fetch_observations(conn, projects, since, until):
-    sql = """SELECT date(created_at) d, type, project, COALESCE(title,'') title,
+    sql = """SELECT id, date(created_at) d, type, project, COALESCE(title,'') title,
                     COALESCE(subtitle,'') subtitle
              FROM observations WHERE 1=1"""
     args = list(projects)
@@ -278,6 +302,13 @@ def render_index(obs, mode, tag_project=False):
     if mode == "decisions":
         L += ["Only observations typed `decision` / `security_*`. "
               "Regenerate with `--index all` for the full set.", ""]
+    # Observations are written mid-session, so a conclusion the same session later
+    # reversed sits here unmarked. Without this line the index reads as a ledger of
+    # settled decisions, which is exactly the misreading that makes it dangerous.
+    L += ["> **In-flight records.** Entries here were written *while* a session ran. "
+          "A conclusion that was reversed later in the same session is still listed. "
+          "For a session's settled outcome, read its entry in the **Session log** below; "
+          "for reversals across sessions, see " + LEDGER_HEADING_INLINE + " if present.", ""]
 
     # Label order: as declared in TYPE_LABELS, unknown types last
     order = list(TYPE_LABELS.keys())
@@ -304,6 +335,9 @@ def render_index(obs, mode, tag_project=False):
                     line = f"- `{it['project']}` {line[2:]}"
                 if sub and sub.lower() != title.lower():
                     line += f" — {sub}"
+                # The id is what makes a ledger line checkable: `get_observations([n])`
+                # pulls the full record behind a claim.
+                line += f" `#{it['id']}`"
                 L.append(line)
             L.append("")
             if fold:
@@ -371,6 +405,20 @@ def build(projects, summaries, obs, next_from, index_mode, since, until, command
         "> **Each entry is a point-in-time record, not settled fact.** claude-mem stores",
         "> conclusions without verifying them, so a claim that a later session reversed may",
         "> still sit here uncorrected. Check later dates before relying on any single entry.",
+    ]
+    # --index none renders no index, so the two-layer note must not point at one.
+    if index_mode != "none":
+        L += [
+            ">",
+            "> **Two layers, different reliability.** The index below is written mid-session",
+            "> and keeps conclusions the same session later reversed. The Session log is",
+            "> written at session end and holds that session's settled outcome — prefer it",
+            "> when the two disagree.",
+        ]
+    L += [
+        ">",
+        f"> Reversals *across* sessions are reconciled only in a `{LEDGER_HEADING}` section",
+        "> maintained by hand above this block, when one exists.",
         "",
     ]
     if dates:

@@ -25,3 +25,14 @@ regeneration.
 conclusions without verifying them, so a claim that a later session reversed may
 still sit here uncorrected. Before relying on any single entry, check whether a
 later date revisits it.
+
+**Two layers, different reliability.** The index is written mid-session and keeps
+conclusions the same session later reversed; the session log is written at session
+end and holds that session's settled outcome — prefer the session log when the two
+disagree.
+
+**A `## 현재 유효한 결론 (Current conclusions)` section at the top of `{{worklog}}`,
+if present, outranks both.** It is the hand-maintained ledger reconciling reversals
+across sessions, refreshed by `/worklog`, and each line carries the dates and
+observation IDs it rests on. It goes stale between regenerations — check its "as of"
+date, and verify against the log below before treating a line as current.

@@ -67,11 +67,63 @@ The command writes two files and prints both to stderr:
 created it, replaced its existing pointer block, or appended to a CLAUDE.md that
 already had other content. Existing CLAUDE.md content is never removed.
 
-### 4. Report
+### 4. Reconcile contradictions into the ledger
+
+The generated document is a faithful transcript, not a verified one. A session that
+changed its mind leaves both conclusions in the index, and a decision reversed months
+later still reads as current at its own date. This step is what keeps a reader from
+acting on a superseded entry — do not skip it.
+
+**Do not attempt this mechanically.** Observation `concepts` are generic taxonomy tags
+(`gotcha`, `trade-off`, `how-it-works`), not topics, so same-subject entries cannot be
+grouped by query. It takes reading.
+
+1. Read the **Decision & security index** in the file you just generated. On a large
+   history, read the most recent ~6 months and anything the user names.
+2. Group entries that concern the same subject — a tool kept or dropped, an approach
+   chosen, a file's home, a convention. Look for groups where a later entry contradicts,
+   narrows, or undoes an earlier one.
+3. Maintain a ledger at the **top of WORKLOG.md, above `<!-- worklog:begin -->`**. Text
+   before the marker is preserved verbatim by every regeneration; text inside it is not.
+   Write it there and nowhere else.
+
+```markdown
+## 현재 유효한 결론 (Current conclusions)
+
+_As of 2026-08-28 · reconciled from the index below. Each line is a reading of the
+record, not a verified fact — follow the dates before relying on one._
+
+- **OMC 플러그인**: 바닐라 모드 유지, HUD만 격리 설치. (2026-08-25 확정 · `#4555`)
+  2026-08-21의 "HUD 부활"(`#4318`)과 v5.0.0 재도입 검토(`#4549`)를 대체.
+- **메모리 스택**: claude-mem 단독 유지, LLM wiki 기각. (2026-07-30 · MEMORY.md)
+```
+
+Rules for the ledger, in order of importance:
+
+- **Every line carries its date and the observation IDs it rests on.** A ledger line is
+  your judgment about someone else's record; without the IDs a reader cannot check it,
+  and an unverifiable line is worse than no line. The index prints each entry's id as
+  `#4555`; `get_observations([4555])` pulls the full record behind it.
+- **Say what each entry supersedes**, with that entry's date and ID. The point of a
+  worklog is why the course changed — reconciling means ranking the entries, never
+  deleting the losers.
+- **Stamp the "as of" date**, because the ledger only refreshes when this skill runs and
+  goes stale in between.
+- **Rewrite the whole ledger each run** rather than appending. A stale line that has
+  itself been superseded is the exact failure this section exists to prevent.
+- **Only genuine contradictions.** A subject that never flip-flopped does not belong
+  here; padding the ledger buries the entries that matter.
+- If nothing contradicts, say so in one line and leave the section short.
+
+Confirm the ledger with the user before writing it when the reconciliation is a judgment
+call — you are asserting which of two recorded conclusions won.
+
+### 5. Report
 
 Give the user the counts, the date range, and which of the two files changed how.
 If the pointer was `appended`, mention that the project already had a CLAUDE.md so
-the section went at the end.
+the section went at the end. Say how many contradictions the ledger reconciled, or
+that none were found.
 
 ## Options worth knowing
 
@@ -98,6 +150,11 @@ the section went at the end.
 - **Entries are point-in-time records.** claude-mem stores conclusions without
   verifying them, so a claim a later session reversed can still sit in the
   document. Do not present worklog contents as settled fact.
+- **The two sections are not equally reliable.** The index comes from `observations`,
+  written mid-session, so it keeps conclusions the same session later reversed. The
+  session log comes from `session_summaries`, written at session end, so it holds that
+  session's settled outcome. When they disagree, the session log wins. Reversals across
+  sessions are settled by neither — only by the ledger from step 4.
 - The pointer wording comes from `~/.claude/templates/worklog-pointer.md`; edit
   that file to change it everywhere. The script falls back to an embedded copy if
   the template is missing.
