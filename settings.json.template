@@ -2,6 +2,9 @@
   "permissions": {
     "defaultMode": "auto"
   },
+  "env": {
+    "OMC_STATE_DIR": "{{CLAUDE_HOME}}/omc-state"
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -43,5 +46,7 @@
       "rateLimits",
       "contextBar"
     ]
-  }
+  },
+  "agentPushNotifEnabled": true,
+  "inputNeededNotifEnabled": true
 }
