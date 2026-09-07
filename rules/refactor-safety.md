@@ -1,6 +1,6 @@
 ---
 description: Safety guardrails for structural refactors and bulk renames
-globs:
+paths:
   - "**/*.ts"
   - "**/*.tsx"
   - "**/*.js"
