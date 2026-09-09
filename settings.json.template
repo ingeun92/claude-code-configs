@@ -1,9 +1,9 @@
 {
-  "permissions": {
-    "defaultMode": "auto"
-  },
   "env": {
     "OMC_STATE_DIR": "{{CLAUDE_HOME}}/omc-state"
+  },
+  "permissions": {
+    "defaultMode": "auto"
   },
   "hooks": {
     "PreToolUse": [
@@ -26,6 +26,8 @@
   "theme": "dark",
   "autoCompactEnabled": true,
   "teammateMode": "auto",
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
   "omcHud": {
     "preset": "focused",
@@ -46,7 +48,5 @@
       "rateLimits",
       "contextBar"
     ]
-  },
-  "agentPushNotifEnabled": true,
-  "inputNeededNotifEnabled": true
+  }
 }

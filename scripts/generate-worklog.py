@@ -581,6 +581,17 @@ def main():
         help=f"also pull keys matching directories under the output dir "
              f"(depth {SCAN_DEPTH}) — for a workspace holding several repos",
     )
+    ap.add_argument(
+        "--exclude-project",
+        action="append",
+        default=[],
+        metavar="KEY",
+        # 흔한 디렉터리명(docs·scripts·backend)은 무관한 프로젝트의 키와 그대로 겹친다.
+        # claude-mem 키에 경로가 없어 스크립트는 둘을 구별할 수 없으므로, 한 번 확인한
+        # 오탐은 여기에 적어 다음 재생성에서도 계속 빠지게 한다.
+        help="drop this key from --include-subprojects (repeatable) — "
+             "for generic directory names that collide with unrelated projects",
+    )
     a = ap.parse_args()
 
     conn = connect_ro(a.db)
@@ -597,6 +608,7 @@ def main():
                 ap.error("--include-subprojects needs --out (the scan root is its directory)")
             root = os.path.dirname(os.path.abspath(os.path.expanduser(a.out))) or "."
             extra = discover_projects(root, all_project_keys(conn)) - {a.project}
+            extra -= set(a.exclude_project)
             projects += sorted(extra)
             # claude-mem keys carry no path, so a same-named directory elsewhere is
             # indistinguishable. Print what was adopted — the operator is the only
@@ -622,6 +634,7 @@ def main():
             + (f" --out {shown}" if shown else "")
             + (f" --index {a.index}" if a.index != "decisions" else "")
             + (" --include-subprojects" if a.include_subprojects else "")
+            + "".join(f" --exclude-project {k}" for k in a.exclude_project)
             # 문서를 재현하는 플래그는 전부 실어야 한다. 빠지면 이 명령을 그대로 돌린
             # 사람이 다른 문서를 얻는데, 차이가 조용하다 — next-steps-from 이 빠지면
             # 이전 날짜의 미해결 블로커가 소리 없이 사라진다.
