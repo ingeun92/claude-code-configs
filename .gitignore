@@ -10,3 +10,6 @@ settings.json
 
 # OMC runtime
 .omc/
+
+# claude.ai skill cache, downloaded by Claude Code on each machine
+skills/synced/

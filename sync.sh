@@ -137,6 +137,8 @@ for skill_dir in "$CLAUDE_HOME"/skills/*/; do
   skill_dir="${skill_dir%/}"
   name=$(basename "$skill_dir")
   if [ -L "$skill_dir" ]; then continue; fi
+  # skills/synced is claude.ai's per-account skill cache; Claude Code fills it on each machine
+  if [ "$name" = synced ]; then continue; fi
   if is_plugin_skill "$name" "$skill_dir"; then
     warn "  skills/$name skipped (plugin-managed)"
     continue

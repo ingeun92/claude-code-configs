@@ -94,6 +94,9 @@ report_orphans() {
     [ -e "$entry" ] || continue
     name=$(basename "$entry")
     [ -e "$REPO_DIR/$sub/$name" ] && continue
+    if [ "$sub" = skills ] && [ "$name" = synced ]; then
+      continue
+    fi
     if is_plugin_owned "$sub" "$name"; then
       info "  Left alone: $sub/$name (plugin-managed)"
       continue
@@ -227,6 +230,8 @@ if [ -d "$REPO_DIR/skills" ]; then
     [ -d "$skill_dir" ] || continue
     skill_dir="${skill_dir%/}"
     name=$(basename "$skill_dir")
+    # skills/synced is claude.ai's per-account skill cache; Claude Code fills it on each machine
+    [ "$name" = synced ] && continue
     copy_dir "$skill_dir" "$CLAUDE_HOME/skills/$name"
   done
 

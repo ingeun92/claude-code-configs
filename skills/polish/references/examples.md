@@ -151,7 +151,7 @@ Do not ban the repeated word. A remaining sentence may still start with `그는`
 **After (KO):**
 > 사전 예고 없이 발표된 새 정책은 수천 명에게 영향을 미친다.
 
-Korean replacements, in rough order of preference: restructure the sentence, comma, parentheses, 가운뎃점 for coordinate items (`서울·부산·대구`), a connective (`곧`, `즉`, `등`), or a full stop.
+Korean replacements, in rough order of preference: restructure the sentence, comma (also for coordinate items: `서울, 부산, 대구`, not `서울·부산·대구`), parentheses, a connective (`곧`, `즉`, `등`), or a full stop.
 
 **Before (EN):**
 > The new policy (em dash) announced without warning (em dash) affects thousands of workers. The changes -- long overdue according to critics -- take effect immediately.
@@ -161,7 +161,17 @@ Korean replacements, in rough order of preference: restructure the sentence, com
 
 Leave dashes and hyphens inside code blocks, inline code, commands, paths, and URLs alone. (This file writes the dash character as `(em dash)` on purpose, so that the file itself does not model the habit.)
 
-### 9. Stacked qualifiers
+### 9. Middle dots as a joiner (Korean only)
+
+**Before:**
+> 이번 분기에는 설계·구현·검증 단계를 거쳐 조회·수정 기능을 배포했다.
+
+**After:**
+> 이번 분기에는 설계, 구현, 검증 단계를 거쳐 조회와 수정 기능을 배포했다.
+
+`한·미 정상회담`처럼 굳어진 표기는 그대로 둔다.
+
+### 10. Stacked qualifiers
 
 **Before (KO):**
 > 이 정책이 결과에 어느 정도 영향을 미칠 수도 있을 것으로 보이는 측면이 있다.
@@ -177,7 +187,7 @@ Leave dashes and hyphens inside code blocks, inline code, commands, paths, and U
 
 One hedge survives in each After because the original claim really is uncertain. Removing it would strengthen a claim the writer did not make.
 
-### 10. Hyphenated pairs everywhere (English only)
+### 11. Hyphenated pairs everywhere (English only)
 
 **Before:**
 > The team is cross-functional, the report is high-quality, and the methodology is data-driven.
@@ -187,7 +197,7 @@ One hedge survives in each After because the original claim really is uncertain.
 
 Keep the hyphen before a noun: `a high-quality report`.
 
-### 11. Passive voice and hidden subjects
+### 12. Passive voice and hidden subjects
 
 **Before (KO):**
 > 이 문제는 여러 차례 지적되어졌고, 해결책도 제시되어진 바 있다. 결과는 자동으로 저장되어진다.
@@ -209,7 +219,7 @@ Korean 이중피동 is a grammatical error, not a stylistic preference, so it ne
 
 The fact underneath is usually sound. Keep it and remove the dressing. Where the dressing is the only content, the sentence goes.
 
-### 12. Overused AI vocabulary
+### 13. Overused AI vocabulary
 
 **Before (KO):**
 > 이 도구는 CSV 변환과 일괄 이름 변경 등 다양한 기능을 제공하는 혁신적인 솔루션으로, 생산성 극대화에 필수적인 역할을 합니다.
@@ -225,7 +235,7 @@ The fact underneath is usually sound. Keep it and remove the dressing. Where the
 
 Keep technical senses of the watched words: `robust regression`, `gated recurrent unit`, `키 값`, `랜드스케이프 모드`.
 
-### 13. Inflated significance
+### 14. Inflated significance
 
 **Before (KO):**
 > 이번 발표는 업계의 새 지평을 연 사건으로, 시사하는 바가 크다. 이후 두 분기 동안 경쟁사 세 곳이 비슷한 기능을 내놓으며 이 회사는 업계 선두로 자리매김했다.
@@ -241,7 +251,7 @@ Keep technical senses of the watched words: `robust regression`, `gated recurren
 
 Each After keeps only what the Before actually established. The significance claims had no evidence behind them, so there is nothing to carry over. Boilerplate section headings that exist only to inflate go the same way: `도전 과제와 전망`, `향후 계획`, `Challenges and Legacy`, `Future Outlook`.
 
-### 14. Vague connection
+### 15. Vague connection
 
 **Before (KO):**
 > 이 지표는 사용자 이탈률과 관련되어 있으며, 매출과도 맞닿아 있다.
@@ -259,7 +269,7 @@ If even the direction of the relationship is unknown, cut the sentence and ask t
 
 That After is only correct if the Before's source says so. When the text gives you nothing but the association, keep the association and leave the mechanism alone.
 
-### 15. Shallow riders
+### 16. Shallow riders
 
 A trailing clause that restates the main clause instead of adding to it.
 
@@ -275,7 +285,7 @@ A trailing clause that restates the main clause instead of adding to it.
 **After (EN):**
 > The company opened three branches, two of them outside its home region.
 
-### 16. Sales language
+### 17. Sales language
 
 **Before (KO):**
 > 시청역에서 도보 5분 거리, 도심 한복판에 자리한 이 호텔은 숨 막히는 전망을 선사하며 놓칠 수 없는 다채로운 경험을 자랑합니다.
@@ -291,7 +301,7 @@ A trailing clause that restates the main clause instead of adding to it.
 
 The sales words disappear and the one checkable fact stays. If the writer wants the activities listed, they have to say which ones.
 
-### 17. Borrowed authority
+### 18. Borrowed authority
 
 **Before (KO):**
 > 전문가들은 이 방식이 더 효율적이라고 말한다. 업계에서도 비슷한 평가가 나온다.
@@ -307,7 +317,7 @@ The sales words disappear and the one checkable fact stays. If the writer wants 
 
 Never manufacture an attribution to fill the gap. An unsourced claim stated plainly is honest; an invented citation is not.
 
-### 18. Avoiding plain verbs
+### 19. Avoiding plain verbs
 
 **Before (KO):**
 > 이 모듈은 인증 처리의 역할을 하며, 세션 관리 기능을 담당한다. 설정 파일은 기본값을 의미한다.
@@ -325,7 +335,7 @@ Never manufacture an attribution to fill the gap. An unsourced claim stated plai
 
 ## D. Formatting by rule
 
-### 19. Bold as decoration
+### 20. Bold as decoration
 
 **Before:**
 > - **속도**: 요청 처리 시간이 절반으로 줄었다.
@@ -339,11 +349,11 @@ Never manufacture an attribution to fill the gap. An unsourced claim stated plai
 
 Bold survives only as a genuine label a reader scans for, such as a term being defined. Never bold a word for emphasis inside a sentence. When you remove the bold labels from a list, check whether the list should have been prose all along.
 
-### 20. Decorative headings
+### 21. Decorative headings
 
 Match the document's existing convention. If other headings are sentence case, make these sentence case. Drop headings from a text too short to need them, and never add a heading the original did not have.
 
-### 21. Curly quotation marks (English only)
+### 22. Curly quotation marks (English only)
 
 Convert curly quotes to straight `"` and `'` unless the original is consistently curly throughout. Leave quotes inside code untouched.
 
@@ -351,7 +361,7 @@ Convert curly quotes to straight `"` and `'` unless the original is consistently
 
 ## E. Leftovers
 
-### 23. Knowledge-limit disclaimers and guesses
+### 24. Knowledge-limit disclaimers and guesses
 
 **Before (KO):**
 > 공개된 정보에 따르면 이 회사는 2015년에 설립되었으며, 구체적인 창업자 정보는 알려지지 않았다.
@@ -361,7 +371,7 @@ Convert curly quotes to straight `"` and `'` unless the original is consistently
 
 The disclaimer is the model talking about its own retrieval, not a fact about the company. Drop it. Keep a genuine "unknown" only when the writer means it as information: `창업자는 공개된 적이 없다` is a claim about the company and stays.
 
-### 24. Heading repeated in the first sentence
+### 25. Heading repeated in the first sentence
 
 **Before:**
 > ## 캐시 설정
@@ -371,7 +381,7 @@ The disclaimer is the model talking about its own retrieval, not a fact about th
 > ## 캐시 설정
 > 만료 시간, 최대 크기, 축출 정책을 지정할 수 있다.
 
-### 22 and 25
+### 23 and 26
 
 Pure deletions with nothing to demonstrate. Phrase lists are in `ai-tells.md`.
 
