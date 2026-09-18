@@ -205,7 +205,7 @@ is the whole process.
 
 - Write the validated design (spec) to `docs/specs/YYYY-MM-DD-<topic>-design.md`
   - (User preferences for spec location override this default)
-- Use elements-of-style:writing-clearly-and-concisely skill if available
+- Use the polish skill to tighten the prose if available
 - Commit the design document to git
 
 **Spec Self-Review:**
