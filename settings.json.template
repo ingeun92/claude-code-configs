@@ -25,6 +25,7 @@
   "tui": "fullscreen",
   "theme": "dark",
   "autoCompactEnabled": true,
+  "autoScrollEnabled": false,
   "teammateMode": "auto",
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
