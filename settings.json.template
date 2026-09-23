@@ -25,7 +25,7 @@
   "tui": "fullscreen",
   "theme": "dark",
   "autoCompactEnabled": true,
-  "autoScrollEnabled": false,
+  "autoScrollEnabled": true,
   "teammateMode": "auto",
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
@@ -49,5 +49,10 @@
       "rateLimits",
       "contextBar"
     ]
+  },
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "high"
+    }
   }
 }
