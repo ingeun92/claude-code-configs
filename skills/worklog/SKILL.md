@@ -33,9 +33,9 @@ ancestor's basename until one matches. If several ancestors match, prefer the
 
 **Stop the walk before `$HOME`.** The home directory's own basename is usually a
 valid project key (the catch-all for sessions started there), so it matches *every*
-path beneath it. Accept it only when cwd is exactly `$HOME`. Without this guard,
-`~/Ing/xdfi/airfi-cli` — a project with no claude-mem history — silently resolves
-to the home project and writes the wrong history into the wrong directory.
+path beneath it. Accept it only when cwd is exactly `$HOME`. Without this guard, a
+project with no claude-mem history of its own silently resolves to the home project
+and gets the wrong history written into it.
 
 If nothing matches, do not invent a key. Show the user the list and ask which
 project they mean, or tell them this directory has no claude-mem history yet.

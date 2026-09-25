@@ -20,6 +20,11 @@
   },
   "language": "한국어",
   "effortLevel": "high",
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "high"
+    }
+  },
   "advisorModel": "fable",
   "awaySummaryEnabled": false,
   "tui": "fullscreen",
@@ -49,10 +54,5 @@
       "rateLimits",
       "contextBar"
     ]
-  },
-  "modelSettings": {
-    "claude-opus-5-5": {
-      "effortLevel": "high"
-    }
   }
 }
