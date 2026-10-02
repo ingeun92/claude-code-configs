@@ -1,7 +1,4 @@
 {
-  "env": {
-    "OMC_STATE_DIR": "{{CLAUDE_HOME}}/omc-state"
-  },
   "permissions": {
     "defaultMode": "auto"
   },
@@ -30,29 +27,11 @@
   "tui": "fullscreen",
   "theme": "dark",
   "autoCompactEnabled": true,
+  "switchModelsOnFlag": true,
   "autoScrollEnabled": true,
   "teammateMode": "auto",
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
-  "omcHud": {
-    "preset": "focused",
-    "elements": {
-      "omcLabel": false,
-      "model": true,
-      "showCallCounts": false,
-      "ralph": false,
-      "autopilot": false,
-      "prdStory": false,
-      "cwd": true,
-      "cwdFormat": "relative",
-      "gitBranch": true,
-      "gitStatus": true
-    },
-    "elementOrder": [
-      "model",
-      "rateLimits",
-      "contextBar"
-    ]
-  }
+  "model": "opus"
 }
