@@ -4,7 +4,8 @@ description: |
   Polish Korean or English prose so it reads like a person wrote it, keeping the input
   language and every claim intact. Use for 다듬어줘, 교정해줘, 자연스럽게 고쳐줘, 윤문,
   polish, proofread, rewrite naturally, "make this not sound like AI", or when the user
-  pastes awkward text to fix. Editing, not translation.
+  pastes awkward text to fix. Also handles STE로, 기술문서처럼, technical style (an
+  STE-style mode for procedures). Editing, not translation.
 ---
 
 # Polish: sentence and paragraph editor
@@ -60,6 +61,10 @@ These five are the detector. Each justifies an edit on one sighting, and any of 
 Twenty-one more tells are catalogued in four groups: **B. Rhythm by rule** (forced triads, repeated openings, dashes, middle dots, stacked qualifiers, hyphenated pairs, passive voice), **C. Inflation and borrowed authority** (AI vocabulary, inflated significance, vague connection, shallow riders, sales language, borrowed authority, avoiding plain verbs), **D. Formatting by rule** (decorative bold, decorative headings, curly quotes), **E. Leftovers** (chatbot residue, knowledge-limit disclaimers, heading repeated in first sentence, writing about the draft).
 
 **Read `references/ai-tells.md` in this skill's directory** for the full checklist and watch-word lists when any of §1 to §5 fire, when the user asks to remove the AI feel, or when the text is machine-written. Ordinary proofreading does not need it.
+
+## Technical mode
+
+When the user asks for `STE로`, `기술문서처럼`, `매뉴얼처럼`, or `technical style`, or embedded mode hands over a procedure or error message, **read `references/technical.md`** and follow it. That mode trades voice and varied rhythm for short, literal, one-instruction sentences based on ASD-STE100. Non-negotiables 1 to 3 still bind. Call the result STE-style, never STE-compliant.
 
 ## When not to act
 
