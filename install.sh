@@ -258,17 +258,21 @@ else
   RENDERED=$(sed "s|{{CLAUDE_HOME}}|$CLAUDE_HOME|g" "$TEMPLATE")
 
   if [ -f "$TARGET" ]; then
-    # Merge: use template as base, overlay plugin-managed fields from existing settings
+    # Merge: use template as base, overlay plugin-managed fields from existing settings.
+    # statusLine comes from the template (scripts/statusline-hud.mjs); an existing one
+    # is kept only when the template has none.
     backup_if_exists "$TARGET"
 
     EXISTING="$TARGET"
     PLUGIN_FIELDS=$(jq '{
       enabledPlugins: .enabledPlugins,
-      extraKnownMarketplaces: .extraKnownMarketplaces,
-      statusLine: .statusLine
+      extraKnownMarketplaces: .extraKnownMarketplaces
     } | with_entries(select(.value != null))' "$EXISTING" 2>/dev/null || echo '{}')
 
-    echo "$RENDERED" | jq --argjson plugins "$PLUGIN_FIELDS" '. + $plugins' > "$TARGET"
+    EXISTING_STATUSLINE=$(jq '.statusLine // null' "$EXISTING" 2>/dev/null || echo null)
+
+    echo "$RENDERED" | jq --argjson plugins "$PLUGIN_FIELDS" --argjson sl "$EXISTING_STATUSLINE" \
+      '. + $plugins | if .statusLine == null and $sl != null then .statusLine = $sl else . end' > "$TARGET"
     info "  settings.json merged (template + existing plugin settings preserved)"
   else
     # No existing file — create from template
@@ -286,6 +290,7 @@ info "Install the following dependencies via official channels:"
 info "  - RTK:         brew install rtk"
 info "  - claude-mem:  claude plugin install claude-mem@thedotmack"
 info "  - jq:          brew install jq"
+info "  - Node.js:     brew install node  (statusline HUD)"
 info ""
 info "Backup location: $BACKUP_DIR"
 info ""

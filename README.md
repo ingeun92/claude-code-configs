@@ -18,7 +18,8 @@ A repository for managing and sharing Claude Code global settings (`~/.claude`).
 │   ├── pre-commit-checklist.md
 │   └── pre-push-checklist.md
 ├── scripts/
-│   └── generate-worklog.py    # Generates WORKLOG.md from claude-mem records
+│   ├── generate-worklog.py    # Generates WORKLOG.md from claude-mem records
+│   └── statusline-hud.mjs     # Status line HUD (usage limits, context, git)
 ├── templates/
 │   └── worklog-pointer.md     # WORKLOG.md pointer block injected into CLAUDE.md
 ├── skills/
@@ -61,8 +62,9 @@ These settings work fully when combined with the tools below.
 | [RTK](https://github.com/rtk-ai/rtk) | Token-saving CLI proxy | `brew install rtk` |
 | [claude-mem](https://github.com/thedotmack/claude-mem) | Cross-session memory | `claude plugin install claude-mem@thedotmack` |
 | [jq](https://jqlang.github.io/jq/) | Hook script dependency | `brew install jq` |
+| [Node.js](https://nodejs.org/) | Runs the status line HUD | `brew install node` |
 
-> **Install order:** Install dependencies first → run `./install.sh`. Plugin-managed fields (`enabledPlugins`, `statusLine`, etc.) in `settings.json` are preserved during merge.
+> **Install order:** Install dependencies first → run `./install.sh`. Plugin-managed fields (`enabledPlugins`, `extraKnownMarketplaces`) in `settings.json` are preserved during merge. `statusLine` comes from the template; an existing one is kept only when the template has none.
 
 ## Workflow
 
@@ -118,6 +120,8 @@ Standalone helper scripts invoked by hand or from a skill, not registered in `se
 ~/.claude/scripts/generate-worklog.py --project <name> --out <path>/WORKLOG.md
 ```
 
+`statusline-hud.mjs` is the exception: it is wired up through `statusLine` in `settings.json.template` rather than run by hand.
+
 To add another script, create it in `scripts/` here first, then run `./install.sh`. Like rules and hooks, `sync.sh` only syncs files that already exist in the repo — a brand-new file in `~/.claude/scripts/` is not picked up on its own.
 
 ### templates/
@@ -136,7 +140,8 @@ To add a new hook script:
 
 - **No secrets**: Never commit files containing tokens or keys (`.mcp.json`, `.env`, etc.).
 - **Absolute paths**: `settings.json` contains machine-specific absolute paths. Always use the `{{CLAUDE_HOME}}` placeholder in `settings.json.template`.
-- **Plugin settings**: `enabledPlugins`, `extraKnownMarketplaces`, and `statusLine` should be managed by official plugin installation on each machine.
+- **Plugin settings**: `enabledPlugins` and `extraKnownMarketplaces` should be managed by official plugin installation on each machine.
+- **Status line**: `statusLine` is versioned in the template and points at `{{CLAUDE_HOME}}/scripts/statusline-hud.mjs`, so every machine gets the same HUD after `./install.sh`. It reads usage limits from the macOS Keychain, falling back to `~/.claude/.credentials.json`.
 
 ## License
 

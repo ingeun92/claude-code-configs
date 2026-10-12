@@ -16,6 +16,11 @@
       }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "node {{CLAUDE_HOME}}/scripts/statusline-hud.mjs",
+    "padding": 0
+  },
   "language": "한국어",
   "effortLevel": "high",
   "modelSettings": {

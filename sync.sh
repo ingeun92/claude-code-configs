@@ -164,7 +164,7 @@ if [ -f "$SOURCE" ]; then
     warn "jq is required for settings.json sync: brew install jq"
   else
     # Strip plugin-managed fields + replace absolute paths with placeholder
-    jq 'del(.enabledPlugins, .extraKnownMarketplaces, .statusLine, .permissions.allow)' "$SOURCE" \
+    jq 'del(.enabledPlugins, .extraKnownMarketplaces, .permissions.allow)' "$SOURCE" \
       | sed "s|$CLAUDE_HOME|{{CLAUDE_HOME}}|g" \
       > "$TARGET"
     info "  settings.json.template synced"
