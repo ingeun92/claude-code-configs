@@ -278,13 +278,13 @@ function compactSettings(modelId, projectDir) {
 
 const fmtTokens = (n) => (n >= 1e6 ? `${+(n / 1e6).toFixed(1)}M` : `${Math.round(n / 1000)}k`);
 
-// Returns { pct, left, base } in tokens against the compact window, or null without data.
+// Returns { pct, left, base } in tokens against the compact window; null only when no window size is known.
 function contextUsage(cw, modelId, projectDir) {
   const size = Number(cw?.context_window_size) || null;
   const u = cw?.current_usage;
   let used = u ? (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) : null;
   if (used == null && cw?.used_percentage != null && size) used = (cw.used_percentage / 100) * size;
-  if (used == null) return null;
+  used ??= 0; // no response yet: an empty gauge against the same window
   const { enabled, window } = compactSettings(modelId, projectDir);
   const base = enabled && window ? Math.min(window, size ?? window) : size;
   if (!base) return null;
@@ -297,7 +297,7 @@ function contextColor(ctx) {
 }
 
 function renderContext(ctx, fit) {
-  if (!ctx) return `ctx: ${paint(GREEN, '0%')}`;
+  if (!ctx) return `ctx: ${fit.bars ? `${bar(0, BAR_WIDTH, GREEN)} ` : ''}${paint(GREEN, '0%')}`;
   const pct = clampPct(ctx.pct);
   const color = contextColor(ctx);
   const gauge = fit.bars ? `${bar(pct, BAR_WIDTH, color)} ` : '';
