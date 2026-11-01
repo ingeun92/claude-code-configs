@@ -180,12 +180,14 @@ def _range_clause(sql, args, since, until):
 
 def _in_clause(projects):
     """`project IN (?,?,…)` — a single key still goes through here so both paths
-    share one query shape."""
-    return " AND project IN (%s)" % ",".join("?" * len(projects))
+    share one query shape. Rows moved by `claude-mem project merge` keep their old
+    `project` and carry the new key in `merged_into_project`, so match on that first."""
+    return " AND COALESCE(merged_into_project, project) IN (%s)" % ",".join("?" * len(projects))
 
 
 def fetch_summaries(conn, projects, since, until):
-    sql = """SELECT date(created_at) d, created_at, memory_session_id sid, project,
+    sql = """SELECT date(created_at) d, created_at, memory_session_id sid,
+                    COALESCE(merged_into_project, project) project,
                     COALESCE(request,'') request,
                     COALESCE(investigated,'') investigated,
                     COALESCE(learned,'') learned,
@@ -199,7 +201,8 @@ def fetch_summaries(conn, projects, since, until):
 
 
 def fetch_observations(conn, projects, since, until):
-    sql = """SELECT id, date(created_at) d, type, project, COALESCE(title,'') title,
+    sql = """SELECT id, date(created_at) d, type,
+                    COALESCE(merged_into_project, project) project, COALESCE(title,'') title,
                     COALESCE(subtitle,'') subtitle
              FROM observations WHERE 1=1"""
     args = list(projects)

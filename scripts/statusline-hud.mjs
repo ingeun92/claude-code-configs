@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 // Claude Code statusLine: a standalone replacement for the oh-my-claude-sisyphus HUD.
 //
-//   ~/Ing/playground/claude-code-configs | branch:main | !2 ?1
-//   Model: Opus 5.5 | 5h:[#-------]8%(4h12m) wk:[#-------]10%(3d13h) fable:[--------]2%(3d13h) | ctx:[##--------]23% | session:42m
+//   ~/Ing/playground/claude-code-configs | branch: main | !2 ?1
+//   Model: Opus 5.5 | 5h: ╸───────── 8% (4h12m) wk: ━━━━━━━╸── 79% (1d7h) fable: ━━━━╸───── 52% (1d7h) | ctx: ━━╸─────── 23% · 386k left (500k) | session: 42m
 //
 // Everything comes from the statusLine stdin payload except per-model weekly
 // buckets (Fable etc.), which only the OAuth usage endpoint reports. That call
 // runs in a detached child (`--refresh`) and lands in a cache file, so drawing
-// never waits on the network.
+// never waits on the network. The ctx gauge is measured against the configured
+// autoCompactWindow (read from settings on every draw), not the model's full window.
 
 import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -168,7 +169,7 @@ function renderGit(cwd) {
   const status = git(['--no-optional-locks', 'status', '--porcelain', '-b'], cwd);
   if (status == null) return [];
   const branch = git(['branch', '--show-current'], cwd) || git(['rev-parse', '--short', 'HEAD'], cwd);
-  const parts = branch ? [`${dim('branch:')}${paint(CYAN, branch)}`] : [];
+  const parts = branch ? [`${dim('branch: ')}${paint(CYAN, branch)}`] : [];
 
   const [head, ...files] = status.split('\n');
   let staged = 0, modified = 0, untracked = 0;
@@ -191,11 +192,17 @@ function renderGit(cwd) {
   return parts;
 }
 
+const BAR_WIDTH = 10;
 const clampPct = (v) => Math.min(100, Math.max(0, Math.round(v)));
 
+// ━ full, ─ empty (dim). A partly filled bar always ends in ╸, whose empty right
+// half keeps a visible gap before the dim track whatever the value.
 function bar(pct, width, color) {
-  const filled = Math.round((pct / 100) * width);
-  return `${color}${'#'.repeat(filled)}${DIM}${'-'.repeat(width - filled)}${RESET}`;
+  const halves = Math.round((pct / 100) * width * 2);
+  const partial = halves > 0 && halves < width * 2;
+  const full = partial ? Math.ceil(halves / 2) - 1 : halves / 2;
+  const half = partial ? 1 : 0;
+  return `${color}${'━'.repeat(full)}${half ? '╸' : ''}${DIM}${'─'.repeat(width - full - half)}${RESET}`;
 }
 
 // resets_at arrives as epoch seconds or millis (stdin) or an ISO string (usage API).
@@ -215,8 +222,8 @@ function renderLimit(label, percent, resetsAt, fit) {
   const pct = clampPct(percent);
   const color = pct >= 90 ? RED : pct >= 70 ? YELLOW : GREEN;
   const reset = untilReset(resetsAt);
-  const gauge = fit.bars ? `[${bar(pct, 8, color)}]` : '';
-  return `${label}:${gauge}${paint(color, `${pct}%`)}${reset && fit.resets ? dim(`(${reset})`) : ''}`;
+  const gauge = fit.bars ? `${bar(pct, BAR_WIDTH, color)} ` : '';
+  return `${label}: ${gauge}${paint(color, `${pct}%`)}${reset && fit.resets ? dim(` (${reset})`) : ''}`;
 }
 
 function renderLimits(stdinLimits, cache, fit) {
@@ -237,11 +244,65 @@ function renderLimits(stdinLimits, cache, fit) {
   return parts.length ? parts.join(' ') : null;
 }
 
-function renderContext(percent, fit) {
-  const pct = clampPct(percent);
-  const [color, suffix] = pct >= 85 ? [RED, ' CRITICAL'] : pct >= 80 ? [YELLOW, ' COMPRESS?'] : pct >= 70 ? [YELLOW, ''] : [GREEN, ''];
-  const gauge = fit.bars ? `[${bar(pct, 10, color)}]` : '';
-  return `ctx:${gauge}${paint(color, `${pct}%${suffix}`)}`;
+// --- context vs. auto-compact ------------------------------------------------
+// Layers merge like Claude Code's: user < project < project-local, and a
+// per-model autoCompactWindow beats the top-level one. Auto-compact fires a few
+// percent before the window (compaction itself needs room), hence the warning
+// colors at 15% / 8% left.
+
+function readJson(path) {
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function compactSettings(modelId, projectDir) {
+  const configDir = process.env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude');
+  const layers = [join(configDir, 'settings.json')];
+  if (projectDir) layers.push(join(projectDir, '.claude', 'settings.json'), join(projectDir, '.claude', 'settings.local.json'));
+  const ids = modelId ? [modelId, modelId.replace(/\[.*\]$/, '')] : [];
+  let perModel, topLevel, enabled = true;
+  for (const s of layers.map(readJson)) {
+    if (!s) continue;
+    if (typeof s.autoCompactEnabled === 'boolean') enabled = s.autoCompactEnabled;
+    if (Number(s.autoCompactWindow) > 0) topLevel = Number(s.autoCompactWindow);
+    for (const id of ids) {
+      const w = Number(s.modelSettings?.[id]?.autoCompactWindow);
+      if (w > 0) { perModel = w; break; }
+    }
+  }
+  return { enabled, window: perModel ?? topLevel ?? null };
+}
+
+const fmtTokens = (n) => (n >= 1e6 ? `${+(n / 1e6).toFixed(1)}M` : `${Math.round(n / 1000)}k`);
+
+// Returns { pct, left, base } in tokens against the compact window, or null without data.
+function contextUsage(cw, modelId, projectDir) {
+  const size = Number(cw?.context_window_size) || null;
+  const u = cw?.current_usage;
+  let used = u ? (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) : null;
+  if (used == null && cw?.used_percentage != null && size) used = (cw.used_percentage / 100) * size;
+  if (used == null) return null;
+  const { enabled, window } = compactSettings(modelId, projectDir);
+  const base = enabled && window ? Math.min(window, size ?? window) : size;
+  if (!base) return null;
+  return { pct: (used / base) * 100, left: Math.max(0, base - used), base };
+}
+
+function contextColor(ctx) {
+  const left = ctx ? 100 - ctx.pct : 100;
+  return left <= 8 ? RED : left <= 15 ? YELLOW : GREEN;
+}
+
+function renderContext(ctx, fit) {
+  if (!ctx) return `ctx: ${paint(GREEN, '0%')}`;
+  const pct = clampPct(ctx.pct);
+  const color = contextColor(ctx);
+  const gauge = fit.bars ? `${bar(pct, BAR_WIDTH, color)} ` : '';
+  const detail = fit.resets ? dim(` · ${fmtTokens(ctx.left)} left (${fmtTokens(ctx.base)})`) : '';
+  return `ctx: ${gauge}${paint(color, `${pct}%`)}${detail}`;
 }
 
 // Skills loaded since the last human prompt, in order. Both routes leave a
@@ -332,25 +393,26 @@ const SKILL_MIN_NAME = 6;
 // a lone name that still doesn't fit is cut with ….
 function renderSkills(skills, budget) {
   if (!skills.length) return null;
-  const label = (shown, rest) => `skill:${shown.join(',')}${rest ? ` +${rest}` : ''}`;
+  const label = (shown, rest) => `skill: ${shown.join(',')}${rest ? ` +${rest}` : ''}`;
   for (let n = skills.length; n >= 1; n--) {
     const text = label(skills.slice(0, n), skills.length - n);
     if (text.length <= budget) return paint(CYAN, text);
   }
   const suffix = skills.length > 1 ? ` +${skills.length - 1}` : '';
-  const room = budget - 'skill:'.length - suffix.length;
+  const room = budget - 'skill: '.length - suffix.length;
   // Too tight for a readable name: just say how many are loaded, or nothing at all.
   if (room < SKILL_MIN_NAME) {
     const count = `skill(${skills.length})`;
     return count.length <= budget ? paint(CYAN, count) : null;
   }
-  return paint(CYAN, `skill:${[...skills[0]].slice(0, room - 1).join('')}…${suffix}`);
+  return paint(CYAN, `skill: ${[...skills[0]].slice(0, room - 1).join('')}…${suffix}`);
 }
 
-function renderSession(durationMs, ctxPct) {
+function renderSession(durationMs, ctx) {
   const mins = Math.floor((durationMs ?? 0) / 60_000);
-  const color = mins > 120 || ctxPct > 85 ? RED : mins > 60 || ctxPct > 70 ? YELLOW : GREEN;
-  return `session:${paint(color, `${mins}m`)}`;
+  const ctxColor = contextColor(ctx);
+  const color = mins > 120 || ctxColor === RED ? RED : mins > 60 || ctxColor === YELLOW ? YELLOW : GREEN;
+  return `session: ${paint(color, `${mins}m`)}`;
 }
 
 async function main() {
@@ -364,7 +426,7 @@ async function main() {
   scheduleRefresh(cache, data.version);
 
   const cwd = data.workspace?.current_dir || data.cwd || process.cwd();
-  const ctxPct = data.context_window?.used_percentage ?? 0;
+  const ctx = contextUsage(data.context_window, data.model?.id, data.workspace?.project_dir);
   const model = data.model?.display_name || data.model?.id;
 
   const cols = Number(process.env.COLUMNS) > 0 ? Number(process.env.COLUMNS) : Infinity;
@@ -388,8 +450,8 @@ async function main() {
     bottom = [
       model && paint(CYAN, fit.modelLabel ? `Model: ${model}` : model),
       renderLimits(data.rate_limits, cache, fit),
-      renderContext(ctxPct, fit),
-      renderSession(data.cost?.total_duration_ms, ctxPct),
+      renderContext(ctx, fit),
+      renderSession(data.cost?.total_duration_ms, ctx),
     ].filter(Boolean).join(SEP);
     if (visibleWidth(bottom) <= cols) break;
   }
