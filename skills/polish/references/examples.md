@@ -83,7 +83,7 @@ Note both Afters are shorter and say the same thing. The saying was the whole co
 > 자, 그럼 본격적으로 하나씩 살펴보겠습니다. 들어가기에 앞서 짚어보면, 이번 장애의 원인은 커넥션 풀 설정이었습니다.
 
 **After (KO):**
-> 이번 장애의 원인은 커넥션 풀 설정이었다.
+> 이번 장애의 원인은 커넥션 풀 설정이었습니다.
 
 **Before (EN):**
 > Let's dive in. Here's the thing: the API has a rate limit of 100 requests per minute.
@@ -115,7 +115,7 @@ Note both Afters are shorter and say the same thing. The saying was the whole co
 > 이번 행사에서는 강연과 패널 토론, 네트워킹 기회를 제공합니다. 참가자들은 혁신과 영감, 그리고 업계 인사이트를 얻어 갈 수 있습니다.
 
 **After (KO):**
-> 이번 행사는 강연과 패널 토론으로 구성되고, 사이사이 참가자끼리 이야기 나눌 시간이 있다.
+> 이번 행사는 강연과 패널 토론으로 구성되고, 사이사이 참가자끼리 이야기 나눌 시간이 있습니다.
 
 The second sentence in the Before adds no fact beyond the first, so it goes. The three real items in the first sentence collapse to two because "네트워킹 기회" is the informal time between sessions, not a third program track.
 
@@ -225,7 +225,7 @@ The fact underneath is usually sound. Keep it and remove the dressing. Where the
 > 이 도구는 CSV 변환과 일괄 이름 변경 등 다양한 기능을 제공하는 혁신적인 솔루션으로, 생산성 극대화에 필수적인 역할을 합니다.
 
 **After (KO):**
-> 이 도구는 CSV 변환과 일괄 이름 변경을 지원한다.
+> 이 도구는 CSV 변환과 일괄 이름 변경을 지원합니다.
 
 **Before (EN):**
 > This robust solution delves into the evolving landscape of CSV processing, showcasing a meticulous streaming approach that handles files larger than memory.
@@ -291,7 +291,7 @@ A trailing clause that restates the main clause instead of adding to it.
 > 시청역에서 도보 5분 거리, 도심 한복판에 자리한 이 호텔은 숨 막히는 전망을 선사하며 놓칠 수 없는 다채로운 경험을 자랑합니다.
 
 **After (KO):**
-> 이 호텔은 시청역에서 걸어서 5분 거리다.
+> 이 호텔은 시청역에서 걸어서 5분 거리입니다.
 
 **Before (EN):**
 > Nestled in the heart of the countryside 12 km from the nearest town, this breathtaking must-visit destination boasts a diverse array of activities.
@@ -413,4 +413,4 @@ Not AI tells but plain editing errors. SKILL.md names them; these are the fixes.
 - 띄어쓰기: 의존명사 (수, 것, 때, 뿐, 지) spaced; 보조용언 spacing consistent within a document.
 - 사이시옷: 나뭇잎, 촛불, 횟수, and not where it does not belong (개수, 초점, 대가).
 - 두음법칙: 여성, 연도, 이자율 in initial position.
-- 종결어미 consistency: never mix 해요체, 합쇼체, and 평어체 in one passage.
+- 종결어미: keep the original's form. 경어체 and 평어체 may coexist in one document.

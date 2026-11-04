@@ -34,7 +34,7 @@ Run silently; show only the result.
 
 - Polished text only. No preamble, no "here is the revised version". One or two sentences on the main changes afterward, only if not obvious.
 - Add no bold or italic for emphasis. Keep markup that was in the original.
-- Korean default is 평어체 (`~이다`) unless the original is 경어체 or the user asks otherwise. Tone is formal but warm; adjust for register.
+- Keep the original's Korean 종결어미 as written: 경어체, 평어체, or both where a document mixes them. Never convert or unify them unless the user asks. Tone is formal but warm; adjust for register.
 - **File mode:** write only the final text to the file, then summarize briefly. Change prose only; leave code, commands, paths, URLs, frontmatter, and link targets untouched.
 - **Embedded mode** (another task calls this skill for a commit message, PR body, doc): return the final text, nothing else.
 
@@ -42,7 +42,7 @@ Run silently; show only the result.
 
 Fix on sight, whether or not the text is AI-flavored.
 
-- **조사, 어미:** wrong particle, awkward 연결어미, 종결어미 mixed within a passage (해요체 / 합쇼체 / 평어체 never mix). 이중피동 (`되어진다`, `보여진다`, `제시되어진`) is a grammatical error, not a style choice.
+- **조사, 어미:** wrong particle, awkward 연결어미. 이중피동 (`되어진다`, `보여진다`, `제시되어진`) is a grammatical error, not a style choice.
 - **No dashes in Korean output.** No em dash, en dash, or `--`. Restructure the sentence, or use a comma, parentheses, or a connective (`곧`, `즉`, `등`). Never touch dashes inside code, commands, paths, or URLs.
 - **Prefer a comma over 가운뎃점 (·).** AI text overuses `·` to join words (`설계·구현·검증`, `조회·수정`). Write `설계, 구현, 검증` instead, or use `와/과` for a pair (`설계와 구현`). Keep `·` only where it is part of a fixed name or established abbreviation (`한·미`, `남북·북미`), inside a quotation, or when a list item itself contains a comma and `·` is needed to group.
 - **번역투:** stacked 소유격 `의`; `들` where Korean does not pluralize; `가지다` for *have*; `~에 대해서` and `~에 있어서` padding; `~적(的)` piled on; inanimate subjects acting (`이 연구는 ~을 보여준다`); `~하는 것이다` padding; `~와 같은` for *such as*.
