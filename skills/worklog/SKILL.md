@@ -67,7 +67,41 @@ The command writes two files and prints both to stderr:
 created it, replaced its existing pointer block, or appended to a CLAUDE.md that
 already had other content. Existing CLAUDE.md content is never removed.
 
-### 4. Reconcile contradictions into the ledger
+### 4. Keep the files out of git
+
+Both files are personal notes built from this machine's claude-mem history. They must
+not end up in a commit through a `git add .`. Add each written file to the repo's
+`.git/info/exclude`. That file is local and never pushed, so the team's `.gitignore` is
+left alone.
+
+Run this for every file the command wrote. Skip CLAUDE.md under `--no-claude-md`, and use
+the `--claude-md` path when one was given:
+
+```bash
+for f in <dir>/WORKLOG.md <dir>/CLAUDE.md; do
+  d=$(dirname "$f"); b=$(basename "$f")
+  top=$(git -C "$d" rev-parse --show-toplevel 2>/dev/null) || { echo "not a git repo: $f"; continue; }
+  rel="$(git -C "$d" rev-parse --show-prefix)$b"
+  if git -C "$top" ls-files --error-unmatch -- "$rel" >/dev/null 2>&1; then
+    echo "tracked, left alone: $rel"; continue
+  fi
+  if git -C "$top" check-ignore -q -- "$rel"; then
+    echo "already ignored: $rel"; continue
+  fi
+  ex=$(git -C "$top" rev-parse --git-path info/exclude)
+  case "$ex" in /*) ;; *) ex="$top/$ex" ;; esac
+  mkdir -p "$(dirname "$ex")" && echo "/$rel" >> "$ex" && echo "excluded: $rel"
+done
+```
+
+- **A tracked file is left alone.** If CLAUDE.md is already committed, the team shares it on
+  purpose, and an exclude entry would not untrack it anyway. Tell the user that the pointer
+  section now sits in a tracked file and will show up in their diff.
+- The entry is anchored with a leading `/`, so only that exact path is excluded, not every
+  CLAUDE.md in subdirectories.
+- `--git-path info/exclude` resolves the right file inside worktrees and submodules too.
+
+### 5. Reconcile contradictions into the ledger
 
 The generated document is a faithful transcript, not a verified one. A session that
 changed its mind leaves both conclusions in the index, and a decision reversed months
@@ -118,11 +152,12 @@ Rules for the ledger, in order of importance:
 Confirm the ledger with the user before writing it when the reconciliation is a judgment
 call — you are asserting which of two recorded conclusions won.
 
-### 5. Report
+### 6. Report
 
 Give the user the counts, the date range, and which of the two files changed how.
 If the pointer was `appended`, mention that the project already had a CLAUDE.md so
-the section went at the end. Say how many contradictions the ledger reconciled, or
+the section went at the end. Report what step 4 did to each file: excluded, already
+ignored, or tracked and left alone. Say how many contradictions the ledger reconciled, or
 that none were found.
 
 ## Options worth knowing
@@ -154,7 +189,7 @@ that none were found.
   written mid-session, so it keeps conclusions the same session later reversed. The
   session log comes from `session_summaries`, written at session end, so it holds that
   session's settled outcome. When they disagree, the session log wins. Reversals across
-  sessions are settled by neither — only by the ledger from step 4.
+  sessions are settled by neither — only by the ledger from step 5.
 - The pointer wording comes from `~/.claude/templates/worklog-pointer.md`; edit
   that file to change it everywhere. The script falls back to an embedded copy if
   the template is missing.
