@@ -2,7 +2,7 @@
   "permissions": {
     "defaultMode": "auto"
   },
-  "model": "opus",
+  "model": "fable",
   "hooks": {
     "PreToolUse": [
       {
@@ -23,10 +23,13 @@
   },
   "language": "한국어",
   "effortLevel": "high",
+  "autoCompactWindow": 500000,
   "modelSettings": {
     "claude-opus-5-5": {
-      "effortLevel": "high",
-      "autoCompactWindow": 500000
+      "effortLevel": "high"
+    },
+    "claude-fable-5-2": {
+      "effortLevel": "low"
     }
   },
   "advisorModel": "fable",
